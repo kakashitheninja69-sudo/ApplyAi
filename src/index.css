@@ -93,4 +93,63 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite linear;
   }
+
+  /* ── Skill badge animations ── */
+  .skill-pop-in {
+    animation: skillPopIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.4) both;
+  }
+
+  .skill-pop-out {
+    animation: skillPopOut 0.18s cubic-bezier(0.55, 0, 1, 0.45) both;
+  }
+
+  .suggestion-slide-in {
+    animation: suggestionSlideIn 0.22s ease both;
+  }
+
+  .tab-indicator {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .skill-input-glow:focus-within {
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12), 0 1px 3px rgba(0,0,0,0.06);
+  }
+}
+
+/* ── Keyframes (outside @layer so they're global) ── */
+@keyframes skillPopIn {
+  0%   { opacity: 0; transform: scale(0.6) translateY(6px); }
+  65%  { transform: scale(1.08) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes skillPopOut {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.55) translateY(4px); }
+}
+
+@keyframes suggestionSlideIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes countBounce {
+  0%, 100% { transform: scale(1); }
+  40%       { transform: scale(1.35); }
+}
+
+@keyframes sparkleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  50%       { transform: translateY(-3px) rotate(15deg); opacity: 0.8; }
+}
+
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: var(--target-width); }
 }

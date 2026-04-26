@@ -22,7 +22,7 @@ export default function ModernSidebar({ data }: TemplateProps) {
       }}
     >
       {/* Sidebar */}
-      <div style={{ width: '240px', background: accent, padding: '36px 24px', color: '#fff', shrink: 0 } as React.CSSProperties}>
+      <div style={{ width: '240px', background: accent, padding: '36px 24px', color: '#fff', flexShrink: 0 }}>
         {/* Avatar placeholder */}
         <div style={{
           width: '80px', height: '80px', borderRadius: '50%',

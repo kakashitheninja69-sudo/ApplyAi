@@ -34,7 +34,8 @@ export default function Step5Skills() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') { e.preventDefault(); handleAdd() }
     if (e.key === 'Backspace' && !input) {
-      const last = data.skills.findLast((s) => s.category === activeCategory)
+      const categorySkills = data.skills.filter((s) => s.category === activeCategory)
+      const last = categorySkills[categorySkills.length - 1]
       if (last) removeSkill(last.id)
     }
   }

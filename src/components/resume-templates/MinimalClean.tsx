@@ -90,7 +90,7 @@ export default function MinimalClean({ data }: TemplateProps) {
 function TwoColRow({ label, accent, font, children }: { label: string; accent: string; font: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-      <div style={{ width: '110px', paddingTop: '2px', borderRight: `2px solid ${accent}30`, paddingRight: '16px', shrink: 0 } as React.CSSProperties}>
+      <div style={{ width: '110px', paddingTop: '2px', borderRight: `2px solid ${accent}30`, paddingRight: '16px', flexShrink: 0 }}>
         <p style={{ fontFamily: font, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', color: accent }}>
           {label}
         </p>

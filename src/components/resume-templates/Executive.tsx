@@ -71,7 +71,7 @@ export default function Executive({ data }: TemplateProps) {
         </div>
 
         {/* Side col */}
-        <div style={{ width: '220px', padding: '32px 32px 32px 20px', borderLeft: '1px solid #f1f5f9', background: '#fafbff', shrink: 0 } as React.CSSProperties}>
+        <div style={{ width: '220px', padding: '32px 32px 32px 20px', borderLeft: '1px solid #f1f5f9', background: '#fafbff', flexShrink: 0 }}>
           {education.some((e) => e.institution) && (
             <>
               <SideHead label="Education" accent={accent} font={hFont} />
@@ -96,7 +96,7 @@ export default function Executive({ data }: TemplateProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '20px' }}>
                 {technical.map((s) => (
                   <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px' }}>
-                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: accent, display: 'inline-block', shrink: 0 }} />
+                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
                     {s.name}
                   </div>
                 ))}

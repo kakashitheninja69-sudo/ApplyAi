@@ -49,7 +49,7 @@ export default function AuthModal() {
   const [tab, setTab] = useState<Tab>('signup')
 
   // Sign-up state
-  const [su, setSu] = useState({ name: '', email: '', username: '', password: '', confirm: '' })
+  const [su, setSu] = useState({ name: '', email: '', username: '', password: '' })
   const [suError, setSuError] = useState('')
   const [suLoading, setSuLoading] = useState(false)
   const [suDone, setSuDone] = useState(false)
@@ -77,18 +77,14 @@ export default function AuthModal() {
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setSuError('')
-    const { name, email, username, password, confirm } = su
+    const { name, email, username, password } = su
 
-    if (!name || !email || !username || !password || !confirm) {
+    if (!name || !email || !username || !password) {
       setSuError('All fields are required.')
       return
     }
     if (password.length < 6) {
       setSuError('Password must be at least 6 characters.')
-      return
-    }
-    if (password !== confirm) {
-      setSuError('Passwords do not match.')
       return
     }
 
@@ -260,29 +256,16 @@ export default function AuthModal() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="su-pass">Password</Label>
-                <Input
-                  id="su-pass"
-                  type="password"
-                  placeholder="Min 6 chars"
-                  value={su.password}
-                  onChange={(e) => setSu((p) => ({ ...p, password: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="su-confirm">Confirm</Label>
-                <Input
-                  id="su-confirm"
-                  type="password"
-                  placeholder="Repeat password"
-                  value={su.confirm}
-                  onChange={(e) => setSu((p) => ({ ...p, confirm: e.target.value }))}
-                  required
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="su-pass">Password</Label>
+              <Input
+                id="su-pass"
+                type="password"
+                placeholder="Min 6 characters"
+                value={su.password}
+                onChange={(e) => setSu((p) => ({ ...p, password: e.target.value }))}
+                required
+              />
             </div>
 
             {suError && (

@@ -18,10 +18,15 @@ export default function TopNav({ activeLink = 'home', variant = 'default' }: Top
     } else if (link === 'templates') {
       navigate('/templates')
     } else if (link === 'pricing') {
-      if (location.pathname === '/') {
-        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
-      } else {
+      const tryScroll = () => {
+        const el = document.getElementById('pricing')
+        if (el) { el.scrollIntoView({ behavior: 'smooth' }); return true }
+        return false
+      }
+      if (!tryScroll()) {
         navigate('/')
+        // Wait for landing page to mount, then scroll
+        setTimeout(tryScroll, 350)
       }
     }
   }

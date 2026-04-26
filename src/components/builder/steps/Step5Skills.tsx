@@ -14,7 +14,7 @@ const CATEGORIES: { id: Skill['category']; label: string; icon: string; color: s
 const ATS_TARGET = 12
 
 export default function Step5Skills() {
-  const { data, addSkill, removeSkill } = useResumeStore()
+  const { data, addSkill, removeSkill, spendCredit } = useResumeStore()
   const [input, setInput]               = useState('')
   const [activeCategory, setActiveCategory] = useState<Skill['category']>('technical')
   const [suggestions, setSuggestions]   = useState<string[]>([])
@@ -59,6 +59,7 @@ export default function Step5Skills() {
   }
 
   async function handleAISuggest() {
+    if (!spendCredit()) return
     setSuggestLoading(true)
     setSuggestions([])
     try {

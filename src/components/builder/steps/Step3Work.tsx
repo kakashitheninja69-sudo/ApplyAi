@@ -42,12 +42,13 @@ function BulletRow({
 }
 
 function WorkCard({ entry }: { entry: WorkExperience }) {
-  const { updateWork, removeWork, addBullet, updateBullet, removeBullet, replaceBullets, data } =
+  const { updateWork, removeWork, addBullet, updateBullet, removeBullet, replaceBullets, data, spendCredit } =
     useResumeStore()
   const [aiLoading, setAiLoading] = useState(false)
   const canDelete = data.work.length > 1
 
   async function handleAIBullets() {
+    if (!spendCredit()) return
     setAiLoading(true)
     try {
       const bullets = await generateBulletPoints(entry.role, entry.company)

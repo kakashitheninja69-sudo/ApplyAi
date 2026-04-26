@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto px-8">
           <div className="mb-10">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-body-sm font-medium mb-6 transition-colors"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>

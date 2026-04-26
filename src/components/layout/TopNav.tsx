@@ -3,31 +3,47 @@ import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
 
 interface TopNavProps {
-  activeLink?: 'home' | 'templates' | 'pricing'
   variant?: 'default' | 'builder'
 }
 
-export default function TopNav({ activeLink = 'home', variant = 'default' }: TopNavProps) {
-  const navigate  = useNavigate()
-  const location  = useLocation()
+export default function TopNav({ variant = 'default' }: TopNavProps) {
+  const navigate      = useNavigate()
+  const location      = useLocation()
   const openAuthModal = useResumeStore((s) => s.openAuthModal)
+  const credits       = useResumeStore((s) => s.credits)
 
-  function handleNavClick(link: 'home' | 'templates' | 'pricing') {
+  // Auto-detect active link from current path
+  const activeLink: 'home' | 'templates' | 'pricing' | 'about' =
+    location.pathname === '/templates' ? 'templates' : 'home'
+
+  function handleLogoClick() {
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      navigate('/')
+    }
+  }
+
+  function handleNavClick(link: 'home' | 'templates' | 'pricing' | 'about') {
     if (link === 'home') {
       navigate('/')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (link === 'templates') {
       navigate('/templates')
+    } else if (link === 'about') {
+      const tryScroll = () => {
+        const el = document.getElementById('about')
+        if (el) { el.scrollIntoView({ behavior: 'smooth' }); return true }
+        return false
+      }
+      if (!tryScroll()) { navigate('/'); setTimeout(tryScroll, 350) }
     } else if (link === 'pricing') {
       const tryScroll = () => {
         const el = document.getElementById('pricing')
         if (el) { el.scrollIntoView({ behavior: 'smooth' }); return true }
         return false
       }
-      if (!tryScroll()) {
-        navigate('/')
-        // Wait for landing page to mount, then scroll
-        setTimeout(tryScroll, 350)
-      }
+      if (!tryScroll()) { navigate('/'); setTimeout(tryScroll, 350) }
     }
   }
 
@@ -37,32 +53,54 @@ export default function TopNav({ activeLink = 'home', variant = 'default' }: Top
         {/* Brand + Nav */}
         <div className="flex items-center gap-10">
           <button
-            onClick={() => navigate('/')}
+            onClick={handleLogoClick}
             className="text-xl font-h1 font-bold tracking-tight text-primary hover:opacity-80 transition-opacity"
           >
             ApplyAI
           </button>
 
-          <nav className="hidden md:flex items-center gap-8">
-            {(['home', 'templates', 'pricing'] as const).map((link) => (
-              <button
-                key={link}
-                onClick={() => handleNavClick(link)}
-                className={cn(
-                  'font-body-sm font-medium tracking-tight capitalize transition-colors',
-                  activeLink === link && variant !== 'builder'
-                    ? 'text-primary border-b-2 border-primary pb-1'
-                    : 'text-on-surface-variant hover:text-primary'
-                )}
-              >
-                {link}
-              </button>
-            ))}
+          <nav className="hidden md:flex items-center gap-1">
+            {(['home', 'templates', 'about', 'pricing'] as const).map((link) => {
+              const isActive = activeLink === link && variant !== 'builder'
+              return (
+                <button
+                  key={link}
+                  onClick={() => handleNavClick(link)}
+                  className={cn(
+                    'relative px-3 py-1.5 rounded-lg font-body-sm font-medium capitalize transition-all duration-200',
+                    isActive
+                      ? 'text-primary bg-primary/8'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                  )}
+                >
+                  {link}
+                  {/* Active underline indicator */}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
+                  )}
+                </button>
+              )
+            })}
           </nav>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* Credits badge — shown when user has used some */}
+          {credits < 3 && (
+            <div className={cn(
+              'hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold',
+              credits === 0
+                ? 'bg-error/10 text-error'
+                : 'bg-primary/10 text-primary'
+            )}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }}>
+                toll
+              </span>
+              {credits} credit{credits !== 1 ? 's' : ''} left
+            </div>
+          )}
+
           <button
             onClick={openAuthModal}
             className="font-body-sm font-medium text-on-surface-variant hover:text-primary transition-colors px-4 py-2"

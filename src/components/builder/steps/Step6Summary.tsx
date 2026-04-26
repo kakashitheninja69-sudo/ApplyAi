@@ -6,7 +6,7 @@ import { useResumeStore } from '@/store/resumeStore'
 import { generateSummary } from '@/lib/ai'
 
 export default function Step6Summary() {
-  const { data, setSummary } = useResumeStore()
+  const { data, setSummary, spendCredit } = useResumeStore()
   const [loading, setLoading]       = useState(false)
   const [options, setOptions]       = useState<string[]>([])
   const [selected, setSelected]     = useState<number | null>(null)
@@ -15,6 +15,7 @@ export default function Step6Summary() {
   const wordCount = data.summary.trim().split(/\s+/).filter(Boolean).length
 
   async function handleGenerate() {
+    if (!spendCredit()) return
     setLoading(true)
     setOptions([])
     setSelected(null)

@@ -7,7 +7,8 @@ import { useResumeStore } from '@/store/resumeStore'
 import { generateCoverLetter } from '@/lib/ai'
 
 export default function CoverLetterGen() {
-  const data = useResumeStore((s) => s.data)
+  const data        = useResumeStore((s) => s.data)
+  const spendCredit = useResumeStore((s) => s.spendCredit)
   const [company, setCompany]     = useState('')
   const [role, setRole]           = useState('')
   const [letter, setLetter]       = useState('')
@@ -15,6 +16,7 @@ export default function CoverLetterGen() {
   const [copied, setCopied]       = useState(false)
 
   async function handleGenerate() {
+    if (!spendCredit()) return
     setLoading(true)
     setLetter('')
     try {

@@ -13,13 +13,15 @@ interface AnalysisResult {
 }
 
 export default function JDMatcher() {
-  const data = useResumeStore((s) => s.data)
+  const data        = useResumeStore((s) => s.data)
+  const spendCredit = useResumeStore((s) => s.spendCredit)
   const [jd, setJd]             = useState('')
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState<AnalysisResult | null>(null)
 
   async function handleAnalyze() {
     if (!jd.trim()) return
+    if (!spendCredit()) return
     setLoading(true)
     setResult(null)
     try {

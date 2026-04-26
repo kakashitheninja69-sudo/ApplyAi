@@ -78,12 +78,14 @@ function QuestionCard({ q, index }: { q: Question; index: number }) {
 }
 
 export default function InterviewPrep() {
-  const data = useResumeStore((s) => s.data)
+  const data        = useResumeStore((s) => s.data)
+  const spendCredit = useResumeStore((s) => s.spendCredit)
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading]     = useState(false)
   const [filter, setFilter]       = useState<Category | 'all'>('all')
 
   async function handleGenerate() {
+    if (!spendCredit()) return
     setLoading(true)
     setQuestions([])
     try {

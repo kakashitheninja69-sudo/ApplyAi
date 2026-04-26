@@ -50,7 +50,7 @@ export default function ApiPage() {
       <div className="pt-24 pb-20">
         <div className="max-w-3xl mx-auto px-8">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-body-sm font-medium mb-8 transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>

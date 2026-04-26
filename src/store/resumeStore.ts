@@ -3,9 +3,13 @@ import { persist } from 'zustand/middleware'
 import type { ResumeData, WorkExperience, Education, Skill, TemplateId, AccentColor, TypographyStyle } from '@/types/resume'
 import { generateId } from '@/lib/utils'
 
+const FREE_CREDITS = 3
+
 interface ResumeStore {
   currentStep: number
   isAuthModalOpen: boolean
+  isUpgradeModalOpen: boolean
+  credits: number
   data: ResumeData
   // navigation
   setStep: (step: number) => void
@@ -14,6 +18,10 @@ interface ResumeStore {
   // auth
   openAuthModal: () => void
   closeAuthModal: () => void
+  // credits
+  spendCredit: () => boolean          // true = credit spent; false = no credits, upgrade modal opened
+  openUpgradeModal: () => void
+  closeUpgradeModal: () => void
   // template
   setTemplate: (t: TemplateId) => void
   setAccentColor: (c: AccentColor) => void
@@ -52,20 +60,35 @@ const DEFAULT_DATA: ResumeData = {
 
 export const useResumeStore = create<ResumeStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentStep: 1,
       isAuthModalOpen: false,
+      isUpgradeModalOpen: false,
+      credits: FREE_CREDITS,
       data: DEFAULT_DATA,
 
       setStep: (step) => set({ currentStep: step }),
       nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 6) })),
       prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) })),
-      openAuthModal: () => set({ isAuthModalOpen: true }),
-      closeAuthModal: () => set({ isAuthModalOpen: false }),
 
-      setTemplate:    (template)   => set((s) => ({ data: { ...s.data, template } })),
-      setAccentColor: (accentColor)=> set((s) => ({ data: { ...s.data, accentColor } })),
-      setTypography:  (typography) => set((s) => ({ data: { ...s.data, typography } })),
+      openAuthModal:    () => set({ isAuthModalOpen: true }),
+      closeAuthModal:   () => set({ isAuthModalOpen: false }),
+      openUpgradeModal: () => set({ isUpgradeModalOpen: true }),
+      closeUpgradeModal:() => set({ isUpgradeModalOpen: false }),
+
+      spendCredit: () => {
+        const { credits } = get()
+        if (credits <= 0) {
+          set({ isUpgradeModalOpen: true })
+          return false
+        }
+        set({ credits: credits - 1 })
+        return true
+      },
+
+      setTemplate:    (template)    => set((s) => ({ data: { ...s.data, template } })),
+      setAccentColor: (accentColor) => set((s) => ({ data: { ...s.data, accentColor } })),
+      setTypography:  (typography)  => set((s) => ({ data: { ...s.data, typography } })),
 
       updateContact: (patch) =>
         set((s) => ({ data: { ...s.data, contact: { ...s.data.contact, ...patch } } })),
@@ -81,7 +104,6 @@ export const useResumeStore = create<ResumeStore>()(
         set((s) => ({ data: { ...s.data, work: s.data.work.map((w) => w.id === id ? { ...w, ...patch } : w) } })),
       removeWork: (id) =>
         set((s) => ({ data: { ...s.data, work: s.data.work.filter((w) => w.id !== id) } })),
-
       addBullet: (workId) =>
         set((s) => ({
           data: { ...s.data, work: s.data.work.map((w) => w.id === workId ? { ...w, bullets: [...w.bullets, ''] } : w) },
@@ -133,7 +155,7 @@ export const useResumeStore = create<ResumeStore>()(
     }),
     {
       name: 'applyai-resume',
-      partialize: (state) => ({ data: state.data, currentStep: state.currentStep }),
+      partialize: (state) => ({ data: state.data, currentStep: state.currentStep, credits: state.credits }),
     }
   )
 )

@@ -73,7 +73,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <TopNav activeLink="templates" />
+      <TopNav />
 
       {/* Hero */}
       <section className="pt-28 pb-14 bg-white border-b border-gray-100">

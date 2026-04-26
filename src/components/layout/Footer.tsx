@@ -1,9 +1,14 @@
+import { useNavigate } from 'react-router-dom'
+
+const LINKS: { label: string; path: string }[] = [
+  { label: 'Privacy',   path: '/privacy' },
+  { label: 'Terms',     path: '/terms' },
+  { label: 'Support',   path: '/support' },
+  { label: 'API',       path: '/api' },
+]
+
 export default function Footer() {
-  const links = ['Privacy', 'Terms', 'Support', 'API']
-  const socials = [
-    { icon: 'public', label: 'Website' },
-    { icon: 'alternate_email', label: 'Email' },
-  ]
+  const navigate = useNavigate()
 
   return (
     <footer className="w-full border-t border-gray-100 bg-white">
@@ -16,28 +21,32 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-8">
-          {links.map((link) => (
-            <a
-              key={link}
-              href="#"
+          {LINKS.map((link) => (
+            <button
+              key={link.label}
+              onClick={() => navigate(link.path)}
               className="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors duration-200"
             >
-              {link}
-            </a>
+              {link.label}
+            </button>
           ))}
         </div>
 
         <div className="flex items-center gap-3">
-          {socials.map(({ icon, label }) => (
-            <a
-              key={icon}
-              href="#"
-              aria-label={label}
-              className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors duration-200"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{icon}</span>
-            </a>
-          ))}
+          <button
+            onClick={() => navigate('/support')}
+            aria-label="Email"
+            className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>alternate_email</span>
+          </button>
+          <button
+            onClick={() => navigate('/api')}
+            aria-label="API"
+            className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>code</span>
+          </button>
         </div>
       </div>
     </footer>

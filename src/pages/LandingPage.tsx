@@ -246,7 +246,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing Comparison ── */}
-      <section className="py-24 bg-white">
+      <section id="pricing" className="py-24 bg-white">
         <div className="max-w-[1440px] mx-auto px-8">
           <div className="text-center mb-16">
             <h2 className="font-h1 text-h1 mb-4">The Smarter Choice</h2>

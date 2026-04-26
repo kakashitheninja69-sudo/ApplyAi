@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
 
@@ -8,8 +8,23 @@ interface TopNavProps {
 }
 
 export default function TopNav({ activeLink = 'home', variant = 'default' }: TopNavProps) {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
+  const location  = useLocation()
   const openAuthModal = useResumeStore((s) => s.openAuthModal)
+
+  function handleNavClick(link: 'home' | 'templates' | 'pricing') {
+    if (link === 'home') {
+      navigate('/')
+    } else if (link === 'templates') {
+      navigate('/templates')
+    } else if (link === 'pricing') {
+      if (location.pathname === '/') {
+        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+      } else {
+        navigate('/')
+      }
+    }
+  }
 
   return (
     <header className="bg-white/95 backdrop-blur-md fixed top-0 w-full z-50 border-b border-gray-200">
@@ -25,9 +40,9 @@ export default function TopNav({ activeLink = 'home', variant = 'default' }: Top
 
           <nav className="hidden md:flex items-center gap-8">
             {(['home', 'templates', 'pricing'] as const).map((link) => (
-              <a
+              <button
                 key={link}
-                href="#"
+                onClick={() => handleNavClick(link)}
                 className={cn(
                   'font-body-sm font-medium tracking-tight capitalize transition-colors',
                   activeLink === link && variant !== 'builder'
@@ -36,7 +51,7 @@ export default function TopNav({ activeLink = 'home', variant = 'default' }: Top
                 )}
               >
                 {link}
-              </a>
+              </button>
             ))}
           </nav>
         </div>
@@ -50,7 +65,7 @@ export default function TopNav({ activeLink = 'home', variant = 'default' }: Top
             Login
           </button>
           <button
-            onClick={() => { openAuthModal() }}
+            onClick={openAuthModal}
             className="ai-sparkle-button px-5 py-2 rounded-lg font-body-sm font-semibold flex items-center gap-2"
           >
             <span

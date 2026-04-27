@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import StepperProgress       from '@/components/builder/StepperProgress'
@@ -35,19 +36,16 @@ const STEP_LABELS = [
 
 type RightPanel = 'preview' | 'ai'
 
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
-}
-
 export default function BuilderPage() {
   const navigate  = useNavigate()
+  const { currentUser } = useAuth()
   const { currentStep, nextStep, prevStep, data, openAuthModal } = useResumeStore()
   const [rightPanel,      setRightPanel]      = useState<RightPanel>('preview')
   const [showTransition,  setShowTransition]  = useState(false)
   const [pendingStep,     setPendingStep]      = useState<number>(2)
 
   function handleExport() {
-    if (!getCurrentUser()) { openAuthModal(); return }
+    if (!currentUser) { openAuthModal(); return }
     window.print()
   }
 

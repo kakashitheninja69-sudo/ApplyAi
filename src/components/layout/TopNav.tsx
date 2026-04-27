@@ -1,6 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
+import { useAuth } from '@/contexts/AuthContext'
+import { signOut } from '@/lib/firebase'
 
 interface TopNavProps {
   variant?: 'default' | 'builder'
@@ -11,6 +13,7 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
   const location      = useLocation()
   const openAuthModal = useResumeStore((s) => s.openAuthModal)
   const credits       = useResumeStore((s) => s.credits)
+  const { currentUser } = useAuth()
 
   // Auto-detect active link from current path
   const activeLink: 'home' | 'templates' | 'pricing' | 'about' =
@@ -101,24 +104,38 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
             </div>
           )}
 
-          <button
-            onClick={openAuthModal}
-            className="font-body-sm font-medium text-on-surface-variant hover:text-primary transition-colors px-4 py-2"
-          >
-            Login
-          </button>
-          <button
-            onClick={openAuthModal}
-            className="ai-sparkle-button px-5 py-2 rounded-lg font-body-sm font-semibold flex items-center gap-2"
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}
-            >
-              auto_awesome
-            </span>
-            Get Started
-          </button>
+          {currentUser ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container">
+                {currentUser.photoURL ? (
+                  <img src={currentUser.photoURL} alt="" className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-[11px] font-bold">
+                    {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
+                  </div>
+                )}
+                <span className="font-body-sm text-[13px] font-medium text-on-surface hidden sm:block max-w-[120px] truncate">
+                  {currentUser.displayName || currentUser.email}
+                </span>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="font-body-sm text-[12px] font-medium text-on-surface-variant hover:text-error transition-colors px-2 py-1.5"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <>
+              <button onClick={openAuthModal} className="font-body-sm font-medium text-on-surface-variant hover:text-primary transition-colors px-4 py-2">
+                Login
+              </button>
+              <button onClick={openAuthModal} className="ai-sparkle-button px-5 py-2 rounded-lg font-body-sm font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                Get Started
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

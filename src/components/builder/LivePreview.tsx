@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '@/store/resumeStore'
+import { useAuth } from '@/contexts/AuthContext'
 import ModernSidebar       from '@/components/resume-templates/ModernSidebar'
 import ClassicProfessional from '@/components/resume-templates/ClassicProfessional'
 import MinimalClean        from '@/components/resume-templates/MinimalClean'
@@ -24,10 +25,6 @@ import CreativePortfolio   from '@/components/resume-templates/CreativePortfolio
 import DataScience         from '@/components/resume-templates/DataScience'
 import ProductManager      from '@/components/resume-templates/ProductManager'
 import DarkElegant         from '@/components/resume-templates/DarkElegant'
-
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
-}
 
 const TEMPLATE_MAP = {
   'ats-clean':            AtsClean,
@@ -59,11 +56,12 @@ const TEMPLATE_MAP = {
 export default function LivePreview() {
   const data          = useResumeStore((s) => s.data)
   const openAuthModal = useResumeStore((s) => s.openAuthModal)
+  const { currentUser } = useAuth()
   const containerRef  = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.6)
 
   function handleExport() {
-    if (!getCurrentUser()) { openAuthModal(); return }
+    if (!currentUser) { openAuthModal(); return }
     window.print()
   }
 

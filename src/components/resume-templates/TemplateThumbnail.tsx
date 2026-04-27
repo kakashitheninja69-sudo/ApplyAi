@@ -1,16 +1,56 @@
 import { useRef, useEffect, useState, useMemo } from 'react'
-import ModernSidebar        from './ModernSidebar'
-import ClassicProfessional  from './ClassicProfessional'
-import MinimalClean         from './MinimalClean'
-import Executive            from './Executive'
+import ModernSidebar       from './ModernSidebar'
+import ClassicProfessional from './ClassicProfessional'
+import MinimalClean        from './MinimalClean'
+import Executive           from './Executive'
+import AtsClean            from './AtsClean'
+import GoogleStandard      from './GoogleStandard'
+import AmazonResults       from './AmazonResults'
+import MetaImpact          from './MetaImpact'
+import FaangCompact        from './FaangCompact'
+import ConsultingImpact    from './ConsultingImpact'
+import BankingFormal       from './BankingFormal'
+import AcademicCv          from './AcademicCv'
+import HealthcarePro       from './HealthcarePro'
+import SplitModern         from './SplitModern'
+import TimelineClassic     from './TimelineClassic'
+import BoldHeader          from './BoldHeader'
+import TwoColumnGrid       from './TwoColumnGrid'
+import CompactElite        from './CompactElite'
+import InfographicPro      from './InfographicPro'
+import StartupModern       from './StartupModern'
+import CreativePortfolio   from './CreativePortfolio'
+import DataScience         from './DataScience'
+import ProductManager      from './ProductManager'
+import DarkElegant         from './DarkElegant'
 import { SAMPLE_RESUME_DATA } from '@/lib/sampleResumeData'
 import type { TemplateId, AccentColor } from '@/types/resume'
 
 const COMPONENTS = {
+  'ats-clean':            AtsClean,
+  'google-standard':      GoogleStandard,
+  'amazon-results':       AmazonResults,
+  'meta-impact':          MetaImpact,
+  'faang-compact':        FaangCompact,
   'modern-sidebar':       ModernSidebar,
   'classic-professional': ClassicProfessional,
   'minimal-clean':        MinimalClean,
   'executive':            Executive,
+  'consulting-impact':    ConsultingImpact,
+  'banking-formal':       BankingFormal,
+  'academic-cv':          AcademicCv,
+  'healthcare-pro':       HealthcarePro,
+  'split-modern':         SplitModern,
+  'timeline-classic':     TimelineClassic,
+  'bold-header':          BoldHeader,
+  'two-column-grid':      TwoColumnGrid,
+  'compact-elite':        CompactElite,
+  'infographic-pro':      InfographicPro,
+  'startup-modern':       StartupModern,
+  'creative-portfolio':   CreativePortfolio,
+  'data-science':         DataScience,
+  'product-manager':      ProductManager,
+  'dark-elegant':         DarkElegant,
 }
 
 interface Props {

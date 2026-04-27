@@ -1,19 +1,59 @@
 import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '@/store/resumeStore'
-
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
-}
 import ModernSidebar       from '@/components/resume-templates/ModernSidebar'
 import ClassicProfessional from '@/components/resume-templates/ClassicProfessional'
 import MinimalClean        from '@/components/resume-templates/MinimalClean'
 import Executive           from '@/components/resume-templates/Executive'
+import AtsClean            from '@/components/resume-templates/AtsClean'
+import GoogleStandard      from '@/components/resume-templates/GoogleStandard'
+import AmazonResults       from '@/components/resume-templates/AmazonResults'
+import MetaImpact          from '@/components/resume-templates/MetaImpact'
+import FaangCompact        from '@/components/resume-templates/FaangCompact'
+import ConsultingImpact    from '@/components/resume-templates/ConsultingImpact'
+import BankingFormal       from '@/components/resume-templates/BankingFormal'
+import AcademicCv          from '@/components/resume-templates/AcademicCv'
+import HealthcarePro       from '@/components/resume-templates/HealthcarePro'
+import SplitModern         from '@/components/resume-templates/SplitModern'
+import TimelineClassic     from '@/components/resume-templates/TimelineClassic'
+import BoldHeader          from '@/components/resume-templates/BoldHeader'
+import TwoColumnGrid       from '@/components/resume-templates/TwoColumnGrid'
+import CompactElite        from '@/components/resume-templates/CompactElite'
+import InfographicPro      from '@/components/resume-templates/InfographicPro'
+import StartupModern       from '@/components/resume-templates/StartupModern'
+import CreativePortfolio   from '@/components/resume-templates/CreativePortfolio'
+import DataScience         from '@/components/resume-templates/DataScience'
+import ProductManager      from '@/components/resume-templates/ProductManager'
+import DarkElegant         from '@/components/resume-templates/DarkElegant'
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
+}
 
 const TEMPLATE_MAP = {
-  'modern-sidebar':      ModernSidebar,
+  'ats-clean':            AtsClean,
+  'google-standard':      GoogleStandard,
+  'amazon-results':       AmazonResults,
+  'meta-impact':          MetaImpact,
+  'faang-compact':        FaangCompact,
+  'modern-sidebar':       ModernSidebar,
   'classic-professional': ClassicProfessional,
-  'minimal-clean':       MinimalClean,
-  'executive':           Executive,
+  'minimal-clean':        MinimalClean,
+  'executive':            Executive,
+  'consulting-impact':    ConsultingImpact,
+  'banking-formal':       BankingFormal,
+  'academic-cv':          AcademicCv,
+  'healthcare-pro':       HealthcarePro,
+  'split-modern':         SplitModern,
+  'timeline-classic':     TimelineClassic,
+  'bold-header':          BoldHeader,
+  'two-column-grid':      TwoColumnGrid,
+  'compact-elite':        CompactElite,
+  'infographic-pro':      InfographicPro,
+  'startup-modern':       StartupModern,
+  'creative-portfolio':   CreativePortfolio,
+  'data-science':         DataScience,
+  'product-manager':      ProductManager,
+  'dark-elegant':         DarkElegant,
 }
 
 export default function LivePreview() {

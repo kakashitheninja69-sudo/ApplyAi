@@ -1,4 +1,33 @@
-export type TemplateId = 'modern-sidebar' | 'classic-professional' | 'minimal-clean' | 'executive'
+export type TemplateId =
+  // FANG / ATS-Optimised (pinned top)
+  | 'ats-clean'
+  | 'google-standard'
+  | 'amazon-results'
+  | 'meta-impact'
+  | 'faang-compact'
+  // Classic / Original
+  | 'modern-sidebar'
+  | 'classic-professional'
+  | 'minimal-clean'
+  | 'executive'
+  // Corporate / Professional
+  | 'consulting-impact'
+  | 'banking-formal'
+  | 'academic-cv'
+  | 'healthcare-pro'
+  // Modern Layouts
+  | 'split-modern'
+  | 'timeline-classic'
+  | 'bold-header'
+  | 'two-column-grid'
+  | 'compact-elite'
+  | 'infographic-pro'
+  // Creative / Industry
+  | 'startup-modern'
+  | 'creative-portfolio'
+  | 'data-science'
+  | 'product-manager'
+  | 'dark-elegant'
 
 export type AccentColor =
   | 'primary'

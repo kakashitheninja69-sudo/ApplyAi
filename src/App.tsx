@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import LandingPage   from './pages/LandingPage'
 import BuilderPage   from './pages/BuilderPage'
@@ -56,9 +56,9 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <HashRouter>
+      <BrowserRouter>
         <AppShell />
-      </HashRouter>
+      </BrowserRouter>
     </AuthProvider>
   )
 }

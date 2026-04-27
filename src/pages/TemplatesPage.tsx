@@ -4,17 +4,11 @@ import Footer from '@/components/layout/Footer'
 import { useResumeStore } from '@/store/resumeStore'
 import { ACCENT_COLORS, cn } from '@/lib/utils'
 import TemplateThumbnail from '@/components/resume-templates/TemplateThumbnail'
+import TemplatePreviewModal from '@/components/resume-templates/TemplatePreviewModal'
+import type { TemplatePreviewEntry } from '@/components/resume-templates/TemplatePreviewModal'
 import type { TemplateId, AccentColor } from '@/types/resume'
 
-interface TemplateEntry {
-  id: TemplateId
-  label: string
-  subtitle: string
-  description: string
-  tags: string[]
-  defaultAccent: AccentColor
-  badge?: string   // e.g. 'FANG' | 'ATS #1'
-}
+type TemplateEntry = TemplatePreviewEntry
 
 interface TemplateSection {
   heading: string
@@ -37,6 +31,7 @@ const SECTIONS: TemplateSection[] = [
         tags: ['ATS', 'Any Role', 'Safe'],
         defaultAccent: 'slate',
         badge: 'ATS #1',
+        features: ['100% ATS-Optimised', 'Single Column', 'No Graphics or Icons', 'Printer Friendly', 'Works for Any Industry', 'Zero Parse Failures'],
       },
       {
         id: 'google-standard',
@@ -46,6 +41,7 @@ const SECTIONS: TemplateSection[] = [
         tags: ['Google', 'SWE', 'Tech'],
         defaultAccent: 'primary',
         badge: 'FANG',
+        features: ['FANG Approved Format', 'Left-Border Section Headers', 'Metric-Focused Bullets', 'ATS Optimised', 'Single Column Layout', 'Recruiter Preferred'],
       },
       {
         id: 'amazon-results',
@@ -55,6 +51,7 @@ const SECTIONS: TemplateSection[] = [
         tags: ['Amazon', 'FAANG', 'Leadership'],
         defaultAccent: 'orange',
         badge: 'FANG',
+        features: ['Results-First Bullets', 'Leadership Principles Aligned', 'STAR Format Friendly', 'ATS Optimised', 'Impact-Driven Layout', 'FANG Approved'],
       },
       {
         id: 'meta-impact',
@@ -64,6 +61,7 @@ const SECTIONS: TemplateSection[] = [
         tags: ['Meta', 'Facebook', 'FAANG'],
         defaultAccent: 'primary',
         badge: 'FANG',
+        features: ['Full-Width Accent Header', 'Two-Column Body', 'Skills-and-Impact Format', 'ATS Optimised', 'FANG Approved', 'High Visual Impact'],
       },
       {
         id: 'faang-compact',
@@ -73,6 +71,7 @@ const SECTIONS: TemplateSection[] = [
         tags: ['FAANG', 'Senior', 'Compact'],
         defaultAccent: 'slate',
         badge: 'FANG',
+        features: ['Ultra-Dense Layout', 'Fits 15+ Years on 1 Page', 'ATS Optimised', 'FANG Approved', 'Senior Engineer Ready', 'Minimum Font 10px'],
       },
     ],
   },
@@ -88,6 +87,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Vibrant two-column layout with a full-height coloured sidebar. Stands out while remaining ATS-compatible.',
         tags: ['Tech', 'Creative', 'Startup'],
         defaultAccent: 'primary',
+        features: ['Full-Height Coloured Sidebar', 'Two-Column Layout', 'ATS Compatible', '8 Accent Colours', 'Contact in Sidebar', 'Skills in Sidebar'],
       },
       {
         id: 'classic-professional',
@@ -96,6 +96,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Centred header with traditional section formatting. Trusted by recruiters in banking, law, and consulting.',
         tags: ['Finance', 'Law', 'Corporate'],
         defaultAccent: 'slate',
+        features: ['Centred Name Header', 'Traditional Layout', 'ATS Optimised', 'Conservative Typography', 'Finance & Law Approved', 'Single Column'],
       },
       {
         id: 'minimal-clean',
@@ -104,6 +105,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Two-column label-plus-content layout with maximum white space. Scores top marks with ATS systems.',
         tags: ['Product', 'Management', 'Any Industry'],
         defaultAccent: 'teal',
+        features: ['Label + Content Layout', 'Maximum White Space', 'High Readability', 'ATS Friendly', 'Works Any Industry', 'Clean & Modern'],
       },
       {
         id: 'executive',
@@ -112,6 +114,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Commanding layout with an accent top bar and side panel. Projects authority for senior positions.',
         tags: ['Leadership', 'C-Suite', 'Director'],
         defaultAccent: 'primary',
+        features: ['Accent Top Bar', 'Side Panel Layout', 'Executive Presence', 'ATS Compatible', 'C-Suite Ready', 'Authority Projection'],
       },
     ],
   },
@@ -127,6 +130,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Centred name, double-rule dividers, impact-first bullet structure. The go-to for MBB consulting applications.',
         tags: ['Consulting', 'McKinsey', 'BCG'],
         defaultAccent: 'slate',
+        features: ['Centred Name Header', 'Double-Rule Dividers', 'Impact-First Bullets', 'MBB Approved Style', 'ATS Optimised', 'Conservative & Polished'],
       },
       {
         id: 'banking-formal',
@@ -135,6 +139,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Centred header, conservative typography, triple-line dividers. The traditional IB format that never fails.',
         tags: ['Finance', 'IB', 'Corporate'],
         defaultAccent: 'slate',
+        features: ['Triple-Line Dividers', 'Conservative Typography', 'IB Format Standard', 'ATS Optimised', 'Finance Approved', 'Centred Header'],
       },
       {
         id: 'academic-cv',
@@ -143,6 +148,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Education-first layout with space for publications, research, and academic achievements.',
         tags: ['Academia', 'Research', 'PhD'],
         defaultAccent: 'secondary',
+        features: ['Education-First Layout', 'Publications Section', 'Research-Ready', 'Academic Standard', 'ATS Compatible', 'PhD & PostDoc Ready'],
       },
       {
         id: 'healthcare-pro',
@@ -151,6 +157,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Teal accent, clean contact block, and category-labelled skills perfect for medical professionals.',
         tags: ['Healthcare', 'Clinical', 'Medical'],
         defaultAccent: 'teal',
+        features: ['Teal Accent Colours', 'Category-Labelled Skills', 'Clean Contact Block', 'Clinical Role Ready', 'ATS Friendly', 'Medical Professional'],
       },
     ],
   },
@@ -166,6 +173,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Narrow accent sidebar with contact and skills; wide main column for experience. Clean and balanced.',
         tags: ['Modern', 'Two-Column', 'Tech'],
         defaultAccent: 'violet',
+        features: ['30/70 Column Split', 'Accent Sidebar', 'Skills in Sidebar', 'ATS Compatible', 'Clean & Balanced', 'Modern Look'],
       },
       {
         id: 'timeline-classic',
@@ -174,6 +182,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Vertical timeline with circle dots and connecting line. Tells your career story in chronological order.',
         tags: ['Visual', 'Timeline', 'Creative'],
         defaultAccent: 'primary',
+        features: ['Vertical Timeline', 'Circle Dot Markers', 'Chronological Story', 'ATS Compatible', 'Visually Engaging', 'Career Progression'],
       },
       {
         id: 'bold-header',
@@ -182,6 +191,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Full-width coloured header band with white name and contact. Instantly memorable.',
         tags: ['Bold', 'Modern', 'Any Role'],
         defaultAccent: 'primary',
+        features: ['Full-Width Header Band', 'White on Accent Name', 'High-Impact Design', 'ATS Compatible', 'Instantly Memorable', '8 Colour Options'],
       },
       {
         id: 'two-column-grid',
@@ -190,6 +200,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Left column: skills, education, contact. Right column: experience. Maximum information in minimal space.',
         tags: ['Grid', 'Balanced', 'Senior'],
         defaultAccent: 'teal',
+        features: ['38/62 Grid Layout', 'Skills Left Column', 'Experience Right Column', 'ATS Compatible', 'High Information Density', 'Senior Ready'],
       },
       {
         id: 'compact-elite',
@@ -198,6 +209,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Ultra-compact for 20+ year careers. Every pixel used. Fits a complete career story on one page.',
         tags: ['Compact', 'Senior', 'Dense'],
         defaultAccent: 'slate',
+        features: ['Ultra-Compact Layout', '20+ Year Career Ready', 'Maximum Information', 'ATS Optimised', 'Elite Density', 'One Page Guarantee'],
       },
       {
         id: 'infographic-pro',
@@ -206,6 +218,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Sidebar with skill-proficiency bars, icon labels, and remaining skills as chips. Visually engaging.',
         tags: ['Visual', 'Infographic', 'Creative'],
         defaultAccent: 'violet',
+        features: ['Skill Progress Bars', 'Icon Skill Labels', 'Chip-Style Tags', 'Visual Sidebar', 'ATS Compatible', 'Data-Driven Look'],
       },
     ],
   },
@@ -221,6 +234,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Oversized name, wide spacing, minimal section labels. The template for early-stage startup culture.',
         tags: ['Startup', 'Minimal', 'Tech'],
         defaultAccent: 'primary',
+        features: ['Oversized Name Header', 'Airy Line Spacing', 'Minimal Section Labels', 'ATS Friendly', 'Startup Culture Vibe', 'Clean & Modern'],
       },
       {
         id: 'creative-portfolio',
@@ -229,6 +243,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Accent-coloured name, colourful skill chips, left-border experience blocks. Personality meets professionalism.',
         tags: ['Design', 'Creative', 'Portfolio'],
         defaultAccent: 'violet',
+        features: ['Accent-Coloured Name', 'Colourful Skill Chips', 'Left-Border Blocks', 'ATS Compatible', 'Portfolio-Ready', 'Personality-Forward'],
       },
       {
         id: 'data-science',
@@ -237,6 +252,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Dark header panel, skills grid above the fold, structured for technical depth and research output.',
         tags: ['Data', 'ML', 'Engineering'],
         defaultAccent: 'primary',
+        features: ['Dark Header Panel', 'Skills Grid Above Fold', 'Technical Depth Layout', 'ATS Optimised', 'ML & Research Ready', 'Engineering Standard'],
       },
       {
         id: 'product-manager',
@@ -245,6 +261,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Blue header strip, metric-callout chips on quantified bullets, separate leadership and tech skill sections.',
         tags: ['Product', 'PM', 'Strategy'],
         defaultAccent: 'primary',
+        features: ['Metric Callout Chips', 'Header Strip Layout', 'Leadership Skills Section', 'Tech Skills Section', 'ATS Optimised', 'PM-Focused Design'],
       },
       {
         id: 'dark-elegant',
@@ -253,6 +270,7 @@ const SECTIONS: TemplateSection[] = [
         description: 'Sophisticated dark background with accent-coloured section headers. Stands out in any pile.',
         tags: ['Dark', 'Premium', 'Creative'],
         defaultAccent: 'violet',
+        features: ['Dark Background Theme', 'Accent Section Headers', 'Premium Look & Feel', 'Sidebar Layout', 'High Contrast', 'Stands Out Instantly'],
       },
     ],
   },
@@ -267,7 +285,8 @@ const DEFAULT_ACCENTS = Object.fromEntries(
 export default function TemplatesPage() {
   const navigate = useNavigate()
   const { resetBuilder } = useResumeStore()
-  const [cardAccents, setCardAccents] = useState<Record<TemplateId, AccentColor>>(DEFAULT_ACCENTS)
+  const [cardAccents,     setCardAccents]     = useState<Record<TemplateId, AccentColor>>(DEFAULT_ACCENTS)
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateEntry | null>(null)
 
   function handleUseTemplate(id: TemplateId) {
     resetBuilder(id, cardAccents[id])
@@ -276,6 +295,14 @@ export default function TemplatesPage() {
 
   function setCardAccent(id: TemplateId, color: AccentColor) {
     setCardAccents(prev => ({ ...prev, [id]: color }))
+  }
+
+  function openPreview(t: TemplateEntry) {
+    setPreviewTemplate(t)
+  }
+
+  function closePreview() {
+    setPreviewTemplate(null)
   }
 
   return (
@@ -335,7 +362,7 @@ export default function TemplatesPage() {
                       className="group bg-white rounded-2xl border border-outline-variant overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                     >
                       {/* Thumbnail */}
-                      <div className="relative overflow-hidden bg-gray-50 cursor-pointer" onClick={() => handleUseTemplate(t.id)}>
+                      <div className="relative overflow-hidden bg-gray-50 cursor-pointer" onClick={() => openPreview(t)}>
                         <TemplateThumbnail templateId={t.id} accentColor={accent} />
 
                         {/* Hover overlay */}
@@ -343,7 +370,7 @@ export default function TemplatesPage() {
                           <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-3 group-hover:translate-y-0">
                             <div className="bg-white text-on-background font-body-sm font-bold px-5 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
                               <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>preview</span>
-                              Use Template
+                              Preview
                             </div>
                           </div>
                         </div>
@@ -415,6 +442,13 @@ export default function TemplatesPage() {
       </div>
 
       <Footer />
+
+      {/* Template preview modal */}
+      <TemplatePreviewModal
+        template={previewTemplate}
+        initialAccent={previewTemplate ? cardAccents[previewTemplate.id] : undefined}
+        onClose={closePreview}
+      />
     </div>
   )
 }

@@ -4,15 +4,16 @@ import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import StepperProgress from '@/components/builder/StepperProgress'
-import LivePreview     from '@/components/builder/LivePreview'
-import AIToolsPanel    from '@/components/ai-tools/AIToolsPanel'
-import Step1Template   from '@/components/builder/steps/Step1Template'
-import Step2Contact    from '@/components/builder/steps/Step2Contact'
-import Step3Work       from '@/components/builder/steps/Step3Work'
-import Step4Education  from '@/components/builder/steps/Step4Education'
-import Step5Skills     from '@/components/builder/steps/Step5Skills'
-import Step6Summary    from '@/components/builder/steps/Step6Summary'
+import StepperProgress       from '@/components/builder/StepperProgress'
+import LivePreview           from '@/components/builder/LivePreview'
+import AIToolsPanel          from '@/components/ai-tools/AIToolsPanel'
+import StepTransitionScreen  from '@/components/builder/StepTransitionScreen'
+import Step1Template         from '@/components/builder/steps/Step1Template'
+import Step2Contact          from '@/components/builder/steps/Step2Contact'
+import Step3Work             from '@/components/builder/steps/Step3Work'
+import Step4Education        from '@/components/builder/steps/Step4Education'
+import Step5Skills           from '@/components/builder/steps/Step5Skills'
+import Step6Summary          from '@/components/builder/steps/Step6Summary'
 
 const STEP_COMPONENTS = [
   Step1Template,
@@ -41,11 +42,24 @@ function getCurrentUser() {
 export default function BuilderPage() {
   const navigate  = useNavigate()
   const { currentStep, nextStep, prevStep, data, openAuthModal } = useResumeStore()
-  const [rightPanel, setRightPanel] = useState<RightPanel>('preview')
+  const [rightPanel,      setRightPanel]      = useState<RightPanel>('preview')
+  const [showTransition,  setShowTransition]  = useState(false)
+  const [pendingStep,     setPendingStep]      = useState<number>(2)
 
   function handleExport() {
     if (!getCurrentUser()) { openAuthModal(); return }
     window.print()
+  }
+
+  function handleContinue() {
+    if (isLast) { handleExport(); return }
+    setPendingStep(currentStep + 1)
+    setShowTransition(true)
+  }
+
+  function handleTransitionDone() {
+    setShowTransition(false)
+    nextStep()
   }
 
   const StepComponent = STEP_COMPONENTS[currentStep - 1]
@@ -83,7 +97,7 @@ export default function BuilderPage() {
               Back
             </Button>
           )}
-          <Button size="sm" onClick={isLast ? handleExport : nextStep}>
+          <Button size="sm" onClick={handleContinue}>
             {isLast ? (
               <>
                 <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>download</span>
@@ -130,13 +144,22 @@ export default function BuilderPage() {
                   Back
                 </Button>
               )}
-              <Button size="sm" onClick={isLast ? handleExport : nextStep}>
+              <Button size="sm" onClick={handleContinue}>
                 {isLast ? 'Export PDF' : 'Continue'}
                 {!isLast && <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>}
               </Button>
             </div>
           </div>
         </div>
+
+        {/* Step transition overlay */}
+        {showTransition && (
+          <StepTransitionScreen
+            fromStep={currentStep}
+            toStep={pendingStep}
+            onContinue={handleTransitionDone}
+          />
+        )}
 
         {/* Right: preview + AI tools */}
         <div className="flex-1 flex flex-col overflow-hidden">

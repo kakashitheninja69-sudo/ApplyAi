@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import TopNav from '@/components/layout/TopNav'
 import Footer from '@/components/layout/Footer'
 import { useResumeStore } from '@/store/resumeStore'
 import { cn } from '@/lib/utils'
@@ -34,7 +33,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <TopNav />
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-16">
@@ -62,10 +60,6 @@ export default function LandingPage() {
               <button onClick={openModal} className="ai-sparkle-button px-8 py-4 rounded-xl font-h2 text-lg flex items-center justify-center gap-3">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>rocket_launch</span>
                 Build My Resume Free
-              </button>
-              <button onClick={() => navigate('/builder')} className="px-8 py-4 rounded-xl border border-outline-variant font-h2 text-lg flex items-center justify-center gap-3 hover:bg-surface-container transition-all">
-                <span className="material-symbols-outlined">play_circle</span>
-                Try Demo
               </button>
             </div>
 

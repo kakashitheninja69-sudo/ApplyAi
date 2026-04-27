@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter as BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
 import LandingPage   from './pages/LandingPage'
 import BuilderPage   from './pages/BuilderPage'
 import TemplatesPage from './pages/TemplatesPage'
@@ -9,6 +9,7 @@ import SupportPage   from './pages/SupportPage'
 import ApiPage       from './pages/ApiPage'
 import AuthModal     from './components/auth/AuthModal'
 import UpgradeModal  from './components/ui/UpgradeModal'
+import TopNav        from './components/layout/TopNav'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -35,13 +36,26 @@ function AnimatedRoutes() {
   )
 }
 
-export default function App() {
+// TopNav lives outside AnimatedRoutes so CSS transform on the page-transition
+// div never breaks the nav's `position: fixed` containing block.
+function AppShell() {
+  const location = useLocation()
+  const isBuilder = location.pathname === '/builder'
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <AuthModal />
       <UpgradeModal />
+      {!isBuilder && <TopNav />}
       <AnimatedRoutes />
-    </BrowserRouter>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <HashRouter>
+      <AppShell />
+    </HashRouter>
   )
 }

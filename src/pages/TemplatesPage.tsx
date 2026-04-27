@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import TopNav from '@/components/layout/TopNav'
 import Footer from '@/components/layout/Footer'
 import { useResumeStore } from '@/store/resumeStore'
 import { ACCENT_COLORS, cn } from '@/lib/utils'
@@ -51,7 +50,7 @@ const TEMPLATES: {
 
 export default function TemplatesPage() {
   const navigate = useNavigate()
-  const { setTemplate, setAccentColor } = useResumeStore()
+  const { resetBuilder } = useResumeStore()
 
   // Per-card selected accent colour (defaults to each template's natural colour)
   const [cardAccents, setCardAccents] = useState<Record<TemplateId, AccentColor>>({
@@ -62,8 +61,7 @@ export default function TemplatesPage() {
   })
 
   function handleUseTemplate(id: TemplateId) {
-    setTemplate(id)
-    setAccentColor(cardAccents[id])
+    resetBuilder(id, cardAccents[id])
     navigate('/builder')
   }
 
@@ -73,7 +71,6 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <TopNav />
 
       {/* Hero */}
       <section className="pt-28 pb-14 bg-white border-b border-gray-100">

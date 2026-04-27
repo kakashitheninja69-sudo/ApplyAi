@@ -34,10 +34,19 @@ const STEP_LABELS = [
 
 type RightPanel = 'preview' | 'ai'
 
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
+}
+
 export default function BuilderPage() {
   const navigate  = useNavigate()
-  const { currentStep, nextStep, prevStep, data } = useResumeStore()
+  const { currentStep, nextStep, prevStep, data, openAuthModal } = useResumeStore()
   const [rightPanel, setRightPanel] = useState<RightPanel>('preview')
+
+  function handleExport() {
+    if (!getCurrentUser()) { openAuthModal(); return }
+    window.print()
+  }
 
   const StepComponent = STEP_COMPONENTS[currentStep - 1]
   const isLast        = currentStep === 6
@@ -74,7 +83,7 @@ export default function BuilderPage() {
               Back
             </Button>
           )}
-          <Button size="sm" onClick={isLast ? undefined : nextStep}>
+          <Button size="sm" onClick={isLast ? handleExport : nextStep}>
             {isLast ? (
               <>
                 <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>download</span>
@@ -121,7 +130,7 @@ export default function BuilderPage() {
                   Back
                 </Button>
               )}
-              <Button size="sm" onClick={isLast ? () => window.print() : nextStep}>
+              <Button size="sm" onClick={isLast ? handleExport : nextStep}>
                 {isLast ? 'Export PDF' : 'Continue'}
                 {!isLast && <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>}
               </Button>

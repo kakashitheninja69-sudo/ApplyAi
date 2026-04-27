@@ -26,6 +26,7 @@ interface ResumeStore {
   setTemplate: (t: TemplateId) => void
   setAccentColor: (c: AccentColor) => void
   setTypography: (t: TypographyStyle) => void
+  resetBuilder: (template: TemplateId, accentColor: AccentColor) => void
   // contact
   updateContact: (patch: Partial<ResumeData['contact']>) => void
   // work
@@ -89,6 +90,10 @@ export const useResumeStore = create<ResumeStore>()(
       setTemplate:    (template)    => set((s) => ({ data: { ...s.data, template } })),
       setAccentColor: (accentColor) => set((s) => ({ data: { ...s.data, accentColor } })),
       setTypography:  (typography)  => set((s) => ({ data: { ...s.data, typography } })),
+      resetBuilder: (template, accentColor) => set({
+        currentStep: 1,
+        data: { ...DEFAULT_DATA, template, accentColor },
+      }),
 
       updateContact: (patch) =>
         set((s) => ({ data: { ...s.data, contact: { ...s.data.contact, ...patch } } })),

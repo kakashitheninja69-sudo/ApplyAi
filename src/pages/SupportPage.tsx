@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import TopNav from '@/components/layout/TopNav'
 import Footer from '@/components/layout/Footer'
 import { cn } from '@/lib/utils'
 
@@ -60,8 +59,6 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <TopNav />
-
       <div className="pt-24 pb-20">
         <div className="max-w-3xl mx-auto px-8">
           <button

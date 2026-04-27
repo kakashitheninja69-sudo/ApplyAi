@@ -1,5 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 import { useResumeStore } from '@/store/resumeStore'
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('applyai_current_user') || 'null') } catch { return null }
+}
 import ModernSidebar       from '@/components/resume-templates/ModernSidebar'
 import ClassicProfessional from '@/components/resume-templates/ClassicProfessional'
 import MinimalClean        from '@/components/resume-templates/MinimalClean'
@@ -13,9 +17,15 @@ const TEMPLATE_MAP = {
 }
 
 export default function LivePreview() {
-  const data        = useResumeStore((s) => s.data)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale]   = useState(0.6)
+  const data          = useResumeStore((s) => s.data)
+  const openAuthModal = useResumeStore((s) => s.openAuthModal)
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0.6)
+
+  function handleExport() {
+    if (!getCurrentUser()) { openAuthModal(); return }
+    window.print()
+  }
 
   useEffect(() => {
     function calcScale() {
@@ -54,7 +64,7 @@ export default function LivePreview() {
           <span className="font-body-sm text-body-sm text-outline">{Math.round(scale * 100)}%</span>
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold ai-sparkle-button text-white"
-            onClick={() => window.print()}
+            onClick={handleExport}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>download</span>
             Export PDF

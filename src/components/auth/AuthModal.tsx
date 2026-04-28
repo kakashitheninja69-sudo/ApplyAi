@@ -35,7 +35,7 @@ export default function AuthModal() {
 
   function goBuilder() {
     closeAuthModal()
-    navigate('/builder')
+    navigate('/onboarding')
   }
 
   async function handleGoogle() {
@@ -90,7 +90,7 @@ export default function AuthModal() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[420px] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
 
         {/* Top accent bar */}
         <div className="h-1 bg-gradient-to-r from-primary via-violet-500 to-secondary" />

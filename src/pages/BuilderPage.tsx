@@ -49,8 +49,10 @@ export default function BuilderPage() {
   const saveTimer = useRef<ReturnType<typeof setTimeout>>()
   const resumeIdRef   = useRef(resumeId)
   const resumeNameRef = useRef(resumeName)
-  useEffect(() => { resumeIdRef.current = resumeId }, [resumeId])
+  const dataRef       = useRef(data)
+  useEffect(() => { resumeIdRef.current   = resumeId  }, [resumeId])
   useEffect(() => { resumeNameRef.current = resumeName }, [resumeName])
+  useEffect(() => { dataRef.current       = data       }, [data])
 
   // Auto-save to localStorage whenever data changes (3 s debounce)
   useEffect(() => {
@@ -65,6 +67,15 @@ export default function BuilderPage() {
     return () => clearTimeout(saveTimer.current)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
+
+  // Flush save immediately when leaving the builder so no data is lost
+  useEffect(() => {
+    return () => {
+      clearTimeout(saveTimer.current)
+      const id = saveResume(resumeIdRef.current, dataRef.current, resumeNameRef.current || 'My Resume')
+      if (!resumeIdRef.current) resumeIdRef.current = id
+    }
+  }, [])
 
   function handleExport() {
     if (!currentUser) { openAuthModal(); return }

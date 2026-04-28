@@ -45,7 +45,7 @@ function ProjectCard({ entry }: { entry: Project }) {
   const { updateProject, removeProject, addProjectBullet, updateProjectBullet, removeProjectBullet, replaceProjectBullets, data, spendCredit } =
     useResumeStore()
   const [aiLoading, setAiLoading] = useState(false)
-  const canDelete = data.projects.length > 1
+  const canDelete = (data.projects ?? []).length > 1
 
   async function handleAIBullets() {
     if (!entry.name) return
@@ -176,6 +176,7 @@ function ProjectCard({ entry }: { entry: Project }) {
 
 export default function Step5Projects() {
   const { data, addProject } = useResumeStore()
+  const projects = data.projects ?? []
 
   return (
     <div className="space-y-6">
@@ -186,7 +187,7 @@ export default function Step5Projects() {
         </p>
       </div>
 
-      {data.projects.length === 0 ? (
+      {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 rounded-2xl border-2 border-dashed border-outline-variant text-center">
           <div className="w-14 h-14 rounded-full bg-primary/8 flex items-center justify-center mb-4">
             <span className="material-symbols-outlined text-primary" style={{ fontSize: '28px', fontVariationSettings: "'FILL' 1" }}>
@@ -204,7 +205,7 @@ export default function Step5Projects() {
         </div>
       ) : (
         <>
-          {data.projects.map((entry) => (
+          {projects.map((entry) => (
             <ProjectCard key={entry.id} entry={entry} />
           ))}
           <Button variant="outline" onClick={addProject} className="w-full border-dashed">

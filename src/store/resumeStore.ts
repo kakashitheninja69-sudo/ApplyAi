@@ -211,6 +211,11 @@ export const useResumeStore = create<ResumeStore>()(
     {
       name: 'applyai-resume',
       partialize: (state) => ({ data: state.data, currentStep: state.currentStep, credits: state.credits }),
+      merge: (persisted: any, current) => ({
+        ...current,
+        ...persisted,
+        data: { ...current.data, ...(persisted?.data ?? {}) },
+      }),
     }
   )
 )

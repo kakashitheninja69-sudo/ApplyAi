@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, Component } from 'react'
+import { useRef, useEffect, useLayoutEffect, useState, useMemo, Component } from 'react'
 import type { ReactNode } from 'react'
 import ModernSidebar       from './ModernSidebar'
 import ClassicProfessional from './ClassicProfessional'
@@ -87,17 +87,21 @@ interface Props {
 
 export default function TemplateThumbnail({ templateId, accentColor = 'primary' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  // Start at 0 so we don't flash the wrong size; wait for ResizeObserver
+  // Start at 0; useLayoutEffect measures and sets the real scale before
+  // the browser paints, so the thumbnail is always the correct size on
+  // first render — no flash, no collapsed-height issue.
   const [scale, setScale] = useState(0)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
 
-    // Fire once immediately using current width, then keep watching
     const update = (width: number) => {
       if (width > 0) setScale(width / 794)
     }
+
+    // Synchronous measurement — getBoundingClientRect forces a layout
+    // computation so we always get the real grid/flex column width.
     update(el.getBoundingClientRect().width)
 
     const ro = new ResizeObserver(([entry]) => {
@@ -123,8 +127,10 @@ export default function TemplateThumbnail({ templateId, accentColor = 'primary' 
         width:    '100%',
         overflow: 'hidden',
         position: 'relative',
-        height:   scaledH > 0 ? `${scaledH}px` : '100%',
-        // Show a subtle shimmer while we wait for the first ResizeObserver tick
+        // scaledH is set synchronously (via useLayoutEffect + getBoundingClientRect)
+        // before the first paint, so this is almost always a real value.
+        // The 120px fallback is just a safety net for SSR / zero-width edge cases.
+        height:   scaledH > 0 ? `${scaledH}px` : '120px',
         background: scale === 0 ? '#f1f5f9' : undefined,
       }}
     >

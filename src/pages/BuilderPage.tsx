@@ -143,15 +143,13 @@ export default function BuilderPage() {
             </button>
           )}
           {/* My Resumes */}
-          {currentUser && (
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all border border-gray-200"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>folder_open</span>
-              My Resumes
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all border border-gray-200"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>folder_open</span>
+            My Resumes
+          </button>
           <span className="font-body-sm text-body-sm text-on-surface-variant hidden lg:block whitespace-nowrap">
             Step {currentStep} / 6
           </span>

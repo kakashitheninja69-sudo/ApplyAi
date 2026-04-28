@@ -55,53 +55,82 @@ const TEMPLATE_MAP = {
   'dark-elegant':         DarkElegant,
 }
 
+// A4 dimensions in pixels at 96dpi
+const A4_W = 794
+const A4_H = 1123
+
 export default function LivePreview() {
   const data           = useResumeStore((s) => s.data)
   const openAuthModal  = useResumeStore((s) => s.openAuthModal)
   const exportTrigger  = useResumeStore((s) => s.exportTrigger)
   const { currentUser } = useAuth()
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const printRef      = useRef<HTMLDivElement>(null)
+  const containerRef   = useRef<HTMLDivElement>(null)
+  const printRef       = useRef<HTMLDivElement>(null)
   const [scale, setScale]         = useState(0.6)
-  const [exporting, setExporting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
+  // triggered from BuilderPage header's "Export PDF" button
   useEffect(() => {
-    if (exportTrigger > 0) doExport()
+    if (exportTrigger > 0) handleDownload()
   }, [exportTrigger])
 
-  async function handleExport() {
+  // ── Download PDF (multi-page) ─────────────────────────────────
+  async function handleDownload() {
     if (!currentUser) { openAuthModal(); return }
-    doExport()
-  }
-
-  async function doExport() {
     if (!printRef.current) return
-    setExporting(true)
+    setDownloading(true)
     try {
-      const canvas = await html2canvas(printRef.current, {
+      const el = printRef.current
+      const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 794,
-        height: 1123,
+        width:  A4_W,
+        height: el.scrollHeight,
+        windowWidth: A4_W,
         logging: false,
       })
-      const imgData = canvas.toDataURL('image/jpeg', 0.97)
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297)
-      const filename = (data.contact.name || 'resume').replace(/\s+/g, '_') + '.pdf'
-      pdf.save(filename)
+
+      const pdf        = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageW      = 210                                      // mm
+      const pageH      = 297                                      // mm
+      const imgW       = pageW
+      const totalImgH  = (canvas.height / canvas.width) * imgW   // mm, full height
+      const totalPages = Math.ceil(totalImgH / pageH)
+
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage()
+        // Shift the image up so each page shows the next slice
+        pdf.addImage(
+          canvas.toDataURL('image/jpeg', 0.97),
+          'JPEG',
+          0,
+          -(i * pageH),
+          imgW,
+          totalImgH,
+        )
+      }
+
+      const name = (data.contact.name || 'resume').replace(/\s+/g, '_')
+      pdf.save(`${name}.pdf`)
     } finally {
-      setExporting(false)
+      setDownloading(false)
     }
   }
 
+  // ── Print (browser print dialog, CSS hides UI) ───────────────
+  function handlePrint() {
+    if (!currentUser) { openAuthModal(); return }
+    window.print()
+  }
+
+  // ── Scale to fit container ───────────────────────────────────
   useEffect(() => {
     function calcScale() {
       if (!containerRef.current) return
       const available = containerRef.current.clientWidth - 48
-      setScale(Math.min(available / 794, 1))
+      setScale(Math.min(available / A4_W, 1))
     }
     calcScale()
     const ro = new ResizeObserver(calcScale)
@@ -112,70 +141,73 @@ export default function LivePreview() {
   const Template = TEMPLATE_MAP[data.template]
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full flex flex-col bg-surface-dim custom-scrollbar overflow-y-auto"
-    >
-      {/* Off-screen full-size render for PDF capture */}
-      <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', height: '1123px', overflow: 'hidden', zIndex: -1 }}>
-        <div ref={printRef} style={{ width: '794px', height: '1123px' }}>
+    <div ref={containerRef} className="h-full flex flex-col bg-surface-dim custom-scrollbar overflow-y-auto">
+
+      {/* Hidden full-height render — used by html2canvas AND @media print */}
+      <div id="resume-print-target" style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: `${A4_W}px`, zIndex: -1 }}>
+        <div ref={printRef} style={{ width: `${A4_W}px` }}>
           <Template data={data} />
         </div>
       </div>
-      {/* Preview toolbar */}
+
+      {/* Toolbar */}
       <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-primary"
-            style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}
-          >
-            visibility
-          </span>
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>visibility</span>
           <span className="font-body-sm text-body-sm font-semibold text-on-surface">Live Preview</span>
-          <span className="font-label-caps text-label-caps text-outline uppercase tracking-widest ml-1">
-            A4
-          </span>
+          <span className="font-label-caps text-label-caps text-outline uppercase tracking-widest ml-1">A4</span>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2">
           <span className="font-body-sm text-body-sm text-outline">{Math.round(scale * 100)}%</span>
+
+          {/* Print button */}
           <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>print</span>
+            Print
+          </button>
+
+          {/* Download PDF button */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold ai-sparkle-button text-white disabled:opacity-60"
-            onClick={handleExport}
-            disabled={exporting}
           >
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: '14px', animation: exporting ? 'spin 1s linear infinite' : 'none' }}
+              style={{ fontSize: '14px', animation: downloading ? 'spin 1s linear infinite' : 'none' }}
             >
-              {exporting ? 'refresh' : 'download'}
+              {downloading ? 'refresh' : 'download'}
             </span>
-            {exporting ? 'Generating…' : 'Export PDF'}
+            {downloading ? 'Generating…' : 'Download PDF'}
           </button>
         </div>
       </div>
 
-      {/* Scaled A4 canvas */}
+      {/* Scaled A4 preview */}
       <div className="flex-1 flex justify-center py-8 px-6">
         <div
           style={{
-            width:         `${794 * scale}px`,
-            height:        `${1123 * scale}px`,
-            position:      'relative',
-            flexShrink:    0,
-            overflow:      'hidden',
-            borderRadius:  '4px',
-            boxShadow:     '0 8px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)',
+            width:      `${A4_W * scale}px`,
+            height:     `${A4_H * scale}px`,
+            position:   'relative',
+            flexShrink: 0,
+            overflow:   'hidden',
+            borderRadius: '4px',
+            boxShadow:  '0 8px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)',
           }}
         >
           <div
             style={{
               transform:       `scale(${scale})`,
               transformOrigin: 'top left',
-              width:           '794px',
-              height:          '1123px',
+              width:           `${A4_W}px`,
+              height:          `${A4_H}px`,
               position:        'absolute',
-              top:             0,
-              left:            0,
+              top: 0, left: 0,
             }}
           >
             <Template data={data} />

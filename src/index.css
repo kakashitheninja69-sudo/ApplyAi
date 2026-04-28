@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Print: show only the resume, nothing else ── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * { visibility: hidden !important; }
+
+  #resume-print-target,
+  #resume-print-target * {
+    visibility: visible !important;
+  }
+
+  #resume-print-target {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 794px !important;
+    height: auto !important;
+    transform: none !important;
+    z-index: 9999 !important;
+  }
+}
+
 @layer base {
   * {
     box-sizing: border-box;

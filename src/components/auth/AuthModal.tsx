@@ -9,7 +9,7 @@ type Tab = 'signup' | 'login'
 const FORMSPREE_FORM_ID = 'mlgavpae'
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal } = useResumeStore()
+  const { isAuthModalOpen, closeAuthModal, data } = useResumeStore()
   const navigate = useNavigate()
 
   const [tab, setTab]           = useState<Tab>('signup')
@@ -33,9 +33,15 @@ export default function AuthModal() {
     setError('')
   }
 
-  function goBuilder() {
+  // New users → onboarding. Returning users with existing resume → builder.
+  function goAfterAuth(isNewSignup: boolean) {
     closeAuthModal()
-    navigate('/onboarding')
+    const hasResume = !!data.contact.name
+    if (isNewSignup || !hasResume) {
+      navigate('/onboarding')
+    } else {
+      navigate('/builder')
+    }
   }
 
   async function handleGoogle() {
@@ -43,7 +49,7 @@ export default function AuthModal() {
     setGLoading(true)
     try {
       await signInWithGoogle()
-      goBuilder()
+      goAfterAuth(false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -59,13 +65,12 @@ export default function AuthModal() {
     setLoading(true)
     try {
       await signUpWithEmail(name.trim(), suEmail, suPass)
-      // fire-and-forget lead capture
       try {
         const fd = new FormData()
         fd.append('name', name); fd.append('email', suEmail); fd.append('source', 'applyai-signup')
         fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, { method: 'POST', body: fd })
       } catch { /* non-critical */ }
-      goBuilder()
+      goAfterAuth(true)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -79,7 +84,7 @@ export default function AuthModal() {
     setLoading(true)
     try {
       await signInWithEmail(liEmail, liPass)
-      goBuilder()
+      goAfterAuth(false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {

@@ -29,12 +29,10 @@ const TEAM = [
 
 export default function LandingPage() {
   const navigate  = useNavigate()
-  const { openAuthModal, data, currentStep } = useResumeStore((s) => ({
-    openAuthModal: s.openAuthModal,
-    data: s.data,
-    currentStep: s.currentStep,
-  }))
-  const hasResume = !!data.contact.name
+  const openAuthModal = useResumeStore((s) => s.openAuthModal)
+  const data          = useResumeStore((s) => s.data)
+  const currentStep   = useResumeStore((s) => s.currentStep)
+  const hasResume     = !!data.contact.name
 
   return (
     <div className="min-h-screen bg-background text-on-background">

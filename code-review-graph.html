@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ApplyAI — Code Review Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    header { padding: 24px 32px 0; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 20px; font-weight: 700; color: #f8fafc; }
+    header .badge { font-size: 11px; background: #1e40af; color: #bfdbfe; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+
+    .tabs { display: flex; gap: 4px; padding: 20px 32px 0; border-bottom: 1px solid #1e293b; }
+    .tab { padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 8px 8px 0 0; cursor: pointer; color: #64748b; background: transparent; border: none; transition: all 0.15s; }
+    .tab:hover { color: #94a3b8; }
+    .tab.active { color: #60a5fa; background: #1e293b; border-bottom: 2px solid #3b82f6; }
+
+    .panel { display: none; padding: 24px 32px; }
+    .panel.active { display: block; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .legend-item { display: flex; align-items: center; gap-8: 6px; font-size: 12px; color: #94a3b8; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; display: inline-block; }
+
+    .mermaid { background: #1e293b; border-radius: 12px; padding: 24px; overflow: auto; }
+    .mermaid svg { max-width: 100%; }
+
+    .issues { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .issue-card { background: #1e293b; border-radius: 12px; padding: 16px; border-left: 3px solid #ef4444; }
+    .issue-card.warn { border-color: #f59e0b; }
+    .issue-card.info { border-color: #3b82f6; }
+    .issue-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #f1f5f9; }
+    .issue-card p { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+    .issue-card code { font-family: 'Fira Code', monospace; background: #0f172a; padding: 1px 5px; border-radius: 4px; font-size: 11px; color: #7dd3fc; }
+    .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tag.err { background: #7f1d1d; color: #fca5a5; }
+    .tag.warn { background: #78350f; color: #fcd34d; }
+    .tag.info { background: #1e3a5f; color: #93c5fd; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat { background: #1e293b; border-radius: 10px; padding: 14px 16px; }
+    .stat-val { font-size: 28px; font-weight: 700; color: #60a5fa; }
+    .stat-label { font-size: 11px; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: #1e293b; border-radius: 10px; overflow: hidden; }
+    th { background: #0f172a; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; }
+    td { padding: 9px 14px; border-top: 1px solid #0f172a; color: #94a3b8; }
+    td:first-child { color: #7dd3fc; font-family: monospace; font-size: 12px; }
+    tr:hover td { background: #263348; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ApplyAI — Code Review Graph</h1>
+  <span class="badge">85 files · React 18 · TypeScript · Zustand · Firebase</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('overview')">Overview</button>
+  <button class="tab" onclick="show('arch')">Architecture</button>
+  <button class="tab" onclick="show('builder')">Builder Flow</button>
+  <button class="tab" onclick="show('data')">Data Flow</button>
+  <button class="tab" onclick="show('issues')">Review Notes</button>
+  <button class="tab" onclick="show('inventory')">File Inventory</button>
+</div>
+
+<!-- ═══════════════════════ OVERVIEW ═══════════════════════ -->
+<div id="overview" class="panel active">
+  <div class="stats">
+    <div class="stat"><div class="stat-val">85</div><div class="stat-label">Total files</div></div>
+    <div class="stat"><div class="stat-val">25</div><div class="stat-label">Resume templates</div></div>
+    <div class="stat"><div class="stat-val">9</div><div class="stat-label">Pages / routes</div></div>
+    <div class="stat"><div class="stat-val">6</div><div class="stat-label">Builder steps</div></div>
+    <div class="stat"><div class="stat-val">3</div><div class="stat-label">AI tools</div></div>
+    <div class="stat"><div class="stat-val">1</div><div class="stat-label">Global store</div></div>
+  </div>
+
+  <div class="mermaid">
+graph TD
+  subgraph ENTRY["⬛  Entry"]
+    main["main.tsx"]
+    App["App.tsx"]
+  end
+
+  subgraph INFRA["🔧  Infrastructure"]
+    Store["resumeStore\n(Zustand + persist)"]
+    Auth["AuthContext\n(Firebase Auth)"]
+    Firebase["firebase.ts\n(Auth + Firestore init)"]
+    LocalRes["localResumes.ts\n(localStorage CRUD)"]
+    AILib["ai.ts\n(Anthropic SDK)"]
+    Utils["utils.ts"]
+    Types["types/resume.ts"]
+  end
+
+  subgraph PAGES["📄  Pages"]
+    Landing["LandingPage"]
+    Builder["BuilderPage"]
+    Dashboard["DashboardPage"]
+    Onboard["OnboardingPage"]
+    Templates["TemplatesPage"]
+    Static["Privacy · Terms\nSupport · API"]
+  end
+
+  subgraph BUILDER_COMPS["🏗  Builder Components"]
+    Stepper["StepperProgress"]
+    Preview["LivePreview"]
+    AIPanel["AIToolsPanel"]
+    Transition["StepTransitionScreen"]
+    Steps["Step 1–6\n(6 form steps)"]
+  end
+
+  subgraph TEMPLATES_LAYER["🎨  Template Layer"]
+    Thumb["TemplateThumbnail"]
+    PrevModal["TemplatePreviewModal"]
+    T25["25 Template\nComponents"]
+    Shared["shared.ts\n(accentHex, headingFont)"]
+  end
+
+  main --> App
+  App --> PAGES
+  App --> Auth
+  App --> Store
+  Builder --> BUILDER_COMPS
+  Builder --> Store
+  Builder --> Auth
+  Builder --> LocalRes
+  Preview --> T25
+  Steps --> AILib
+  Steps --> Store
+  AIPanel --> AILib
+  AIPanel --> Store
+  Thumb --> T25
+  Dashboard --> LocalRes
+  Store --> Types
+  Firebase --> Auth
+  Shared --> Types
+  LocalRes --> Utils
+
+  style ENTRY fill:#1e293b,stroke:#334155,color:#e2e8f0
+  style INFRA fill:#172554,stroke:#1e40af,color:#e2e8f0
+  style PAGES fill:#14532d,stroke:#166534,color:#e2e8f0
+  style BUILDER_COMPS fill:#431407,stroke:#7c2d12,color:#e2e8f0
+  style TEMPLATES_LAYER fill:#2e1065,stroke:#6d28d9,color:#e2e8f0
+  </div>
+</div>
+
+<!-- ═══════════════════════ ARCHITECTURE ═══════════════════════ -->
+<div id="arch" class="panel">
+  <div class="mermaid">
+graph LR
+  subgraph ROUTES["Routes  (react-router-dom)"]
+    r1["/"]
+    r2["/builder"]
+    r3["/dashboard"]
+    r4["/onboarding"]
+    r5["/templates"]
+    r6["/privacy · /terms\n/support · /api"]
+  end
+
+  subgraph SHARED_UI["Shared UI  (Radix + Tailwind)"]
+    Button
+    Input
+    Textarea
+    Progress
+    Dialog
+    Tabs
+    Badge
+    Label
+    UpgradeModal
+  end
+
+  subgraph AUTH_LAYER["Auth Layer"]
+    AuthProvider --> FirebaseAuth["Firebase Auth\n(Google + Email/Password)"]
+    AuthModal --> FirebaseAuth
+    AuthModal --> LocalRes2["localResumes.ts\n(post-login routing)"]
+  end
+
+  subgraph STATE["State  (Zustand v5 + localStorage persist)"]
+    Store2["useResumeStore\n──────────────\ncurrentStep, data\nresumeId, resumeName\nisSaving, lastSaved\ncredits, exportTrigger\nisAuthModalOpen\nisUpgradeModalOpen"]
+  end
+
+  r1 --> LandingPage2["LandingPage"]
+  r2 --> BuilderPage2["BuilderPage"]
+  r3 --> DashboardPage2["DashboardPage"]
+  r4 --> OnboardingPage2["OnboardingPage"]
+  r5 --> TemplatesPage2["TemplatesPage"]
+
+  BuilderPage2 --> Store2
+  LandingPage2 --> Store2
+  DashboardPage2 --> Store2
+  OnboardingPage2 --> Store2
+  TemplatesPage2 --> Store2
+
+  BuilderPage2 --> SHARED_UI
+  AuthModal --> Store2
+  UpgradeModal --> Store2
+
+  style ROUTES fill:#1e293b,stroke:#334155,color:#e2e8f0
+  style SHARED_UI fill:#172554,stroke:#1e40af,color:#e2e8f0
+  style AUTH_LAYER fill:#1a1a2e,stroke:#7c3aed,color:#e2e8f0
+  style STATE fill:#14532d,stroke:#166534,color:#e2e8f0
+  </div>
+</div>
+
+<!-- ═══════════════════════ BUILDER FLOW ═══════════════════════ -->
+<div id="builder" class="panel">
+  <div class="mermaid">
+flowchart TD
+  User(["User"]) --> BP["BuilderPage"]
+
+  BP --> Header["Header\n(Back · Stepper · Save Version · My Resumes · Continue)"]
+  BP --> LeftPanel["Left Panel\n(600px fixed)"]
+  BP --> RightPanel["Right Panel\n(flex-1)"]
+  BP --> Footer2["Step Footer\n(dot nav + Back/Continue)"]
+
+  LeftPanel --> SC["StepComponent\n(currentStep - 1)"]
+
+  SC --> S1["Step 1\nContact Info\n(Step2Contact.tsx)"]
+  SC --> S2["Step 2\nWork Experience\n(Step3Work.tsx)\n+ AI Enhance"]
+  SC --> S3["Step 3\nEducation\n(Step4Education.tsx)"]
+  SC --> S4["Step 4\nSkills\n(Step5Skills.tsx)\n+ AI Suggest"]
+  SC --> S5["Step 5\nProjects\n(Step5Projects.tsx)\n+ AI Enhance"]
+  SC --> S6["Step 6\nSummary\n(Step6Summary.tsx)\n+ AI Generate"]
+
+  RightPanel --> PanelSwitch{"Panel\nSwitcher"}
+  PanelSwitch -->|"Live Preview"| LivePrev["LivePreview\n→ 25 template components\n→ Print / Download PDF\n(html2canvas + jsPDF)"]
+  PanelSwitch -->|"AI Tools"| AIToolsP["AIToolsPanel\n→ JDMatcher\n→ CoverLetterGen\n→ InterviewPrep"]
+
+  BP --> Transition["StepTransitionScreen\n(overlay during step change)"]
+
+  BP --> AutoSave["Auto-save\n(3s debounce)\n→ localResumes.ts"]
+
+  style User fill:#1e40af,stroke:#3b82f6,color:#e2e8f0
+  style BP fill:#1e293b,stroke:#334155,color:#e2e8f0
+  style AutoSave fill:#14532d,stroke:#166534,color:#e2e8f0
+  style LivePrev fill:#2e1065,stroke:#6d28d9,color:#e2e8f0
+  style AIToolsP fill:#431407,stroke:#7c2d12,color:#e2e8f0
+  </div>
+</div>
+
+<!-- ═══════════════════════ DATA FLOW ═══════════════════════ -->
+<div id="data" class="panel">
+  <div class="mermaid">
+flowchart LR
+  subgraph INPUT["User Input"]
+    Forms["Form Steps\n1–6"]
+  end
+
+  subgraph STORE_LAYER["Zustand Store\n(useResumeStore)"]
+    direction TB
+    DataSlice["data: ResumeData\n──────────\ncontact · work\neducation · skills\nprojects · summary\ntemplate · accentColor\ntypography"]
+    MetaSlice["meta\n──────────\ncurrentStep\ncredits\nresumeId · resumeName\nisSaving · lastSaved\nexportTrigger"]
+    ModalSlice["modals\n──────────\nisAuthModalOpen\nisUpgradeModalOpen"]
+  end
+
+  subgraph PERSIST["Persistence"]
+    LS["localStorage\napplyai-resume\n(Zustand persist)"]
+    LR["localResumes.ts\napplyai-resumes\napplyai-versions-{id}"]
+  end
+
+  subgraph OUTPUT["Output"]
+    LivePrev2["LivePreview\n→ 25 Templates"]
+    PDF["PDF Export\n(html2canvas + jsPDF)"]
+    AIOut["AI Results\n(Anthropic SDK)"]
+  end
+
+  subgraph AI_FLOW["AI Calls  (lib/ai.ts)"]
+    BulletAI["generateBulletPoints"]
+    SummaryAI["generateSummary"]
+    SkillAI["suggestSkills"]
+    JDAI["analyzeJobDescription"]
+    CLAI["generateCoverLetter"]
+    IntAI["generateInterviewQuestions"]
+  end
+
+  Forms -->|"set/update actions"| DataSlice
+  DataSlice --> LivePrev2
+  DataSlice --> PDF
+  MetaSlice -->|"exportTrigger"| PDF
+  DataSlice --> BulletAI
+  DataSlice --> SummaryAI
+  DataSlice --> SkillAI
+  DataSlice --> JDAI
+  DataSlice --> CLAI
+  DataSlice --> IntAI
+  AI_FLOW --> AIOut
+  DataSlice --> LS
+  MetaSlice --> LS
+  DataSlice -->|"3s debounce auto-save"| LR
+
+  style INPUT fill:#14532d,stroke:#166534,color:#e2e8f0
+  style STORE_LAYER fill:#1e293b,stroke:#334155,color:#e2e8f0
+  style PERSIST fill:#172554,stroke:#1e40af,color:#e2e8f0
+  style OUTPUT fill:#2e1065,stroke:#6d28d9,color:#e2e8f0
+  style AI_FLOW fill:#431407,stroke:#7c2d12,color:#e2e8f0
+  </div>
+</div>
+
+<!-- ═══════════════════════ REVIEW NOTES ═══════════════════════ -->
+<div id="issues" class="panel">
+  <div class="issues">
+
+    <div class="issue-card warn">
+      <span class="tag warn">Dead Import</span>
+      <h3>resumeStore imports firestore.ts</h3>
+      <p><code>resumeStore.ts</code> imports <code>ResumeListItem</code> from <code>@/lib/firestore</code>, but the active persistence layer is now <code>localResumes.ts</code>. The Firestore import is unused and will fail if Firestore isn't enabled. Change to import from <code>@/lib/localResumes</code>.</p>
+    </div>
+
+    <div class="issue-card warn">
+      <span class="tag warn">Dead Import</span>
+      <h3>AuthModal still imports firestore.ts</h3>
+      <p><code>AuthModal.tsx</code> imports <code>loadUserResumes</code> and <code>loadResume</code> from <code>@/lib/firestore</code>. These were replaced with <code>localResumes.ts</code> equivalents but the import was never updated, leaving a dead Firestore reference.</p>
+    </div>
+
+    <div class="issue-card warn">
+      <span class="tag warn">Dead Import</span>
+      <h3>BuilderPage imports firestore.ts</h3>
+      <p><code>BuilderPage.tsx</code> imports <code>saveResume</code> and <code>saveVersion</code> from <code>@/lib/firestore</code>. The save calls were migrated to <code>localResumes.ts</code> but the import line still references Firestore.</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">Naming</span>
+      <h3>Builder step file names are off-by-one</h3>
+      <p>BuilderPage imports <code>Step2Contact</code> as "Step 1", <code>Step3Work</code> as "Step 2", etc. The file names don't match the logical step numbers. Rename files to match their position: <code>Step1Contact</code>, <code>Step2Work</code>, etc. (or accept the legacy offset).</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">Unused File</span>
+      <h3>Step1Template.tsx is not used</h3>
+      <p><code>src/components/builder/steps/Step1Template.tsx</code> still exists in the file system but was removed from <code>STEP_COMPONENTS</code> in BuilderPage — the template is now chosen in the OnboardingPage. Safe to delete.</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">Bundle Size</span>
+      <h3>Main chunk is 1.6 MB unminified</h3>
+      <p>All 25 resume template components are statically imported in <code>TemplateThumbnail.tsx</code>, loading them all up-front. Consider lazy-loading templates with <code>React.lazy()</code> or dynamic imports — most users only ever view 1–2 templates.</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">Architecture</span>
+      <h3>firestore.ts is dormant dead code</h3>
+      <p><code>src/lib/firestore.ts</code> is a full Firestore implementation that isn't wired up to any active feature. Either remove it to reduce confusion, or add a comment noting it's the future cloud upgrade path.</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">State</span>
+      <h3>savedResumes in store is never populated</h3>
+      <p><code>useResumeStore</code> has a <code>savedResumes: ResumeListItem[]</code> field that was originally populated by a Firestore call. After migrating to localStorage, nothing calls <code>setSavedResumes</code>. Either remove the field or wire it up in DashboardPage.</p>
+    </div>
+
+    <div class="issue-card">
+      <span class="tag info">UX</span>
+      <h3>Dashboard requires no auth gate</h3>
+      <p><code>DashboardPage</code> previously redirected to <code>/</code> if <code>currentUser</code> was null. The migration removed the redirect, so any user (logged-out) can now visit <code>/dashboard</code> and see their local resumes. This is fine UX-wise, but the header's avatar block still renders conditionally, so it's inconsistent.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════ FILE INVENTORY ═══════════════════════ -->
+<div id="inventory" class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Layer</th>
+        <th>Key exports</th>
+        <th>Depends on</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>src/main.tsx</td><td>Entry</td><td>—</td><td>App</td></tr>
+      <tr><td>src/App.tsx</td><td>Entry</td><td>App</td><td>All pages, AuthModal, UpgradeModal, TopNav, AuthContext</td></tr>
+      <tr><td>src/types/resume.ts</td><td>Types</td><td>ResumeData + 8 types</td><td>—</td></tr>
+      <tr><td>src/lib/utils.ts</td><td>Lib</td><td>cn, generateId, ACCENT_COLORS</td><td>—</td></tr>
+      <tr><td>src/lib/ai.ts</td><td>Lib</td><td>6 AI functions</td><td>Anthropic SDK</td></tr>
+      <tr><td>src/lib/firebase.ts</td><td>Lib</td><td>app, db, auth, signIn*, signOut</td><td>Firebase SDK</td></tr>
+      <tr><td>src/lib/localResumes.ts</td><td>Lib</td><td>saveResume, loadAllResumes, versions…</td><td>types/resume, utils</td></tr>
+      <tr><td>src/lib/firestore.ts</td><td>Lib (dormant)</td><td>Same API as localResumes</td><td>firebase, types/resume</td></tr>
+      <tr><td>src/lib/sampleResumeData.ts</td><td>Lib</td><td>SAMPLE_RESUME_DATA</td><td>types/resume</td></tr>
+      <tr><td>src/store/resumeStore.ts</td><td>State</td><td>useResumeStore</td><td>types/resume, utils, firestore ⚠️</td></tr>
+      <tr><td>src/contexts/AuthContext.tsx</td><td>Context</td><td>AuthProvider, useAuth</td><td>firebase</td></tr>
+      <tr><td>src/pages/LandingPage.tsx</td><td>Page</td><td>LandingPage</td><td>Footer, resumeStore, AuthContext</td></tr>
+      <tr><td>src/pages/BuilderPage.tsx</td><td>Page</td><td>BuilderPage</td><td>resumeStore, AuthContext, firestore ⚠️, all builder components</td></tr>
+      <tr><td>src/pages/DashboardPage.tsx</td><td>Page</td><td>DashboardPage</td><td>localResumes, AuthContext, resumeStore</td></tr>
+      <tr><td>src/pages/OnboardingPage.tsx</td><td>Page</td><td>OnboardingPage</td><td>resumeStore, AuthContext, TemplateThumbnail</td></tr>
+      <tr><td>src/pages/TemplatesPage.tsx</td><td>Page</td><td>TemplatesPage</td><td>Footer, resumeStore, TemplateThumbnail, TemplatePreviewModal</td></tr>
+      <tr><td>src/components/auth/AuthModal.tsx</td><td>Modal</td><td>AuthModal</td><td>resumeStore, firebase, firestore ⚠️</td></tr>
+      <tr><td>src/components/ui/UpgradeModal.tsx</td><td>Modal</td><td>UpgradeModal</td><td>dialog, resumeStore</td></tr>
+      <tr><td>src/components/layout/TopNav.tsx</td><td>Layout</td><td>TopNav</td><td>resumeStore, AuthContext, firebase</td></tr>
+      <tr><td>src/components/layout/Footer.tsx</td><td>Layout</td><td>Footer</td><td>react-router-dom</td></tr>
+      <tr><td>src/components/builder/BuilderPage.tsx</td><td>Builder</td><td>—</td><td>(is the page)</td></tr>
+      <tr><td>src/components/builder/StepperProgress.tsx</td><td>Builder</td><td>StepperProgress</td><td>resumeStore, utils</td></tr>
+      <tr><td>src/components/builder/LivePreview.tsx</td><td>Builder</td><td>LivePreview</td><td>resumeStore, AuthContext, 25 templates</td></tr>
+      <tr><td>src/components/builder/StepTransitionScreen.tsx</td><td>Builder</td><td>StepTransitionScreen</td><td>resumeStore, TemplateThumbnail</td></tr>
+      <tr><td>src/components/builder/steps/Step2Contact.tsx</td><td>Step 1</td><td>Step1Contact</td><td>ui/input, ui/label, resumeStore</td></tr>
+      <tr><td>src/components/builder/steps/Step3Work.tsx</td><td>Step 2</td><td>Step2Work</td><td>ui, resumeStore, ai</td></tr>
+      <tr><td>src/components/builder/steps/Step4Education.tsx</td><td>Step 3</td><td>Step3Education</td><td>ui, resumeStore</td></tr>
+      <tr><td>src/components/builder/steps/Step5Skills.tsx</td><td>Step 4</td><td>Step4Skills</td><td>resumeStore, ai, utils</td></tr>
+      <tr><td>src/components/builder/steps/Step5Projects.tsx</td><td>Step 5</td><td>Step5Projects</td><td>ui, resumeStore, ai</td></tr>
+      <tr><td>src/components/builder/steps/Step6Summary.tsx</td><td>Step 6</td><td>Step6Summary</td><td>ui/textarea, resumeStore, ai</td></tr>
+      <tr><td>src/components/builder/steps/Step1Template.tsx</td><td>Step (unused ⚠️)</td><td>Step1Template</td><td>resumeStore, TemplateThumbnail</td></tr>
+      <tr><td>src/components/ai-tools/AIToolsPanel.tsx</td><td>AI Tools</td><td>AIToolsPanel</td><td>JDMatcher, CoverLetterGen, InterviewPrep</td></tr>
+      <tr><td>src/components/ai-tools/JDMatcher.tsx</td><td>AI Tools</td><td>JDMatcher</td><td>resumeStore, ai, ui</td></tr>
+      <tr><td>src/components/ai-tools/CoverLetterGen.tsx</td><td>AI Tools</td><td>CoverLetterGen</td><td>resumeStore, ai, ui</td></tr>
+      <tr><td>src/components/ai-tools/InterviewPrep.tsx</td><td>AI Tools</td><td>InterviewPrep</td><td>resumeStore, ai</td></tr>
+      <tr><td>src/components/resume-templates/shared.ts</td><td>Templates</td><td>accentHex, headingFont, formatDateRange</td><td>types/resume, utils</td></tr>
+      <tr><td>src/components/resume-templates/TemplateThumbnail.tsx</td><td>Templates</td><td>TemplateThumbnail</td><td>All 25 templates, sampleResumeData</td></tr>
+      <tr><td>src/components/resume-templates/TemplatePreviewModal.tsx</td><td>Templates</td><td>TemplatePreviewModal</td><td>resumeStore, TemplateThumbnail</td></tr>
+      <tr><td>src/components/resume-templates/[25 files]</td><td>Templates</td><td>One component each</td><td>shared.ts, types/resume</td></tr>
+      <tr><td>src/components/ui/[8 files]</td><td>UI Primitives</td><td>Button, Input, Textarea…</td><td>utils (cn), Radix UI</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#1e40af', primaryTextColor: '#e2e8f0', primaryBorderColor: '#3b82f6', lineColor: '#475569', secondaryColor: '#1e293b', tertiaryColor: '#0f172a' } })
+
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.getElementById(id).classList.add('active')
+    event.target.classList.add('active')
+  }
+</script>
+</body>
+</html>

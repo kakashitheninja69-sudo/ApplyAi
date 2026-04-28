@@ -5,7 +5,7 @@ import { useResumeStore } from '@/store/resumeStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { saveResume, saveVersion } from '@/lib/firestore'
+import { saveResume, saveVersion } from '@/lib/localResumes'
 import StepperProgress       from '@/components/builder/StepperProgress'
 import LivePreview           from '@/components/builder/LivePreview'
 import AIToolsPanel          from '@/components/ai-tools/AIToolsPanel'
@@ -52,26 +52,19 @@ export default function BuilderPage() {
   useEffect(() => { resumeIdRef.current = resumeId }, [resumeId])
   useEffect(() => { resumeNameRef.current = resumeName }, [resumeName])
 
-  // Auto-save to Firestore whenever data changes (3 s debounce)
+  // Auto-save to localStorage whenever data changes (3 s debounce)
   useEffect(() => {
-    if (!currentUser) return
     clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(async () => {
+    saveTimer.current = setTimeout(() => {
       setIsSaving(true)
-      try {
-        const id = await saveResume(
-          currentUser.uid, resumeIdRef.current,
-          data, resumeNameRef.current || 'My Resume',
-        )
-        if (!resumeIdRef.current) setResumeId(id)
-        setLastSaved(Date.now())
-      } finally {
-        setIsSaving(false)
-      }
+      const id = saveResume(resumeIdRef.current, data, resumeNameRef.current || 'My Resume')
+      if (!resumeIdRef.current) setResumeId(id)
+      setLastSaved(Date.now())
+      setIsSaving(false)
     }, 3000)
     return () => clearTimeout(saveTimer.current)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, currentUser])
+  }, [data])
 
   function handleExport() {
     if (!currentUser) { openAuthModal(); return }
@@ -138,7 +131,7 @@ export default function BuilderPage() {
               onClick={async () => {
                 setIsSaving(true)
                 try {
-                  await saveVersion(currentUser.uid, resumeId, data,
+                  saveVersion(resumeId, data,
                     new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))
                 } finally { setIsSaving(false) }
               }}

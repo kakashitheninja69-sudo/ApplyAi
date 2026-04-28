@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ResumeData, WorkExperience, Education, Skill, Project, TemplateId, AccentColor, TypographyStyle } from '@/types/resume'
 import { generateId } from '@/lib/utils'
-import type { ResumeListItem } from '@/lib/firestore'
+import type { ResumeListItem } from '@/lib/localResumes'
 
 const FREE_CREDITS = 3
 

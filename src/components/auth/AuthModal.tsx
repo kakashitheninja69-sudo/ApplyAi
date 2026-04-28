@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResumeStore } from '@/store/resumeStore'
 import { signInWithGoogle, signUpWithEmail, signInWithEmail } from '@/lib/firebase'
-import { loadUserResumes, loadResume } from '@/lib/firestore'
+import { loadAllResumes, loadResume } from '@/lib/localResumes'
 import { cn } from '@/lib/utils'
 import type { User } from '@/lib/firebase'
 
@@ -35,18 +35,17 @@ export default function AuthModal() {
     setError('')
   }
 
-  // After auth: load cloud resumes and route intelligently
-  async function goAfterAuth(user: User, isNewSignup: boolean) {
+  // After auth: check localStorage resumes and route intelligently
+  function goAfterAuth(user: User, isNewSignup: boolean) {
     closeAuthModal()
     if (isNewSignup) { navigate('/onboarding'); return }
     try {
-      const resumes = await loadUserResumes(user.uid)
+      const resumes = loadAllResumes()
       setSavedResumes(resumes)
       if (resumes.length === 0) {
         navigate('/onboarding')
       } else if (resumes.length === 1) {
-        // Auto-load single resume into builder
-        const resumeData = await loadResume(user.uid, resumes[0].id)
+        const resumeData = loadResume(resumes[0].id)
         if (resumeData) {
           loadResumeData(resumeData, resumes[0].id, resumes[0].name)
           navigate('/builder')
@@ -66,7 +65,7 @@ export default function AuthModal() {
     setGLoading(true)
     try {
       const user = await signInWithGoogle()
-      await goAfterAuth(user, false)
+      goAfterAuth(user, false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -87,7 +86,7 @@ export default function AuthModal() {
         fd.append('name', name); fd.append('email', suEmail); fd.append('source', 'applyai-signup')
         fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, { method: 'POST', body: fd })
       } catch { /* non-critical */ }
-      await goAfterAuth(user, true)
+      goAfterAuth(user, true)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -101,7 +100,7 @@ export default function AuthModal() {
     setLoading(true)
     try {
       const user = await signInWithEmail(liEmail, liPass)
-      await goAfterAuth(user, false)
+      goAfterAuth(user, false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {

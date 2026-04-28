@@ -65,9 +65,11 @@ const TEMPLATE_PICKS: {
   },
 ]
 
-const FONT_OPTIONS: { id: TypographyStyle; label: string; sample: string }[] = [
-  { id: 'corporate-sans', label: 'Modern Sans',   sample: 'Aa' },
-  { id: 'classic-serif',  label: 'Classic Serif', sample: 'Aa' },
+const FONT_OPTIONS: { id: TypographyStyle; label: string; sample: string; subtitle: string; fontFamily: string }[] = [
+  { id: 'corporate-sans',  label: 'Modern Sans',    sample: 'Aa', subtitle: 'Bold & professional', fontFamily: 'Manrope, sans-serif' },
+  { id: 'classic-serif',   label: 'Classic Serif',  sample: 'Aa', subtitle: 'Elegant & timeless',  fontFamily: 'Newsreader, serif' },
+  { id: 'modern-rounded',  label: 'DM Sans',         sample: 'Aa', subtitle: 'Friendly & clean',    fontFamily: 'DM Sans, sans-serif' },
+  { id: 'executive-serif', label: 'Executive',       sample: 'Aa', subtitle: 'Polished & senior',   fontFamily: 'Lora, serif' },
 ]
 
 export default function OnboardingPage() {
@@ -229,28 +231,30 @@ export default function OnboardingPage() {
               <p style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Font Style
               </p>
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {FONT_OPTIONS.map(f => (
                   <button
                     key={f.id}
                     onClick={() => setFont(f.id)}
                     className={cn(
-                      'flex-1 py-5 px-4 rounded-2xl border-2 transition-all bg-white',
-                      font === f.id ? 'border-primary' : 'border-gray-100 hover:border-gray-200'
+                      'text-left py-4 px-4 rounded-2xl border-2 transition-all bg-white',
+                      font === f.id ? 'border-primary shadow-md' : 'border-gray-100 hover:border-gray-200'
                     )}
                   >
                     <p
                       style={{
-                        fontSize:   '32px',
-                        fontFamily: f.id === 'classic-serif' ? 'Georgia, serif' : 'Inter, sans-serif',
+                        fontSize:   '28px',
+                        fontFamily: f.fontFamily,
                         fontWeight: 700,
                         color:      font === f.id ? '#003fb1' : '#94a3b8',
-                        marginBottom: '6px',
+                        marginBottom: '4px',
+                        lineHeight: 1,
                       }}
                     >
                       {f.sample}
                     </p>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: font === f.id ? '#0f172a' : '#64748b' }}>{f.label}</p>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: font === f.id ? '#0f172a' : '#64748b' }}>{f.label}</p>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{f.subtitle}</p>
                   </button>
                 ))}
               </div>
@@ -270,7 +274,7 @@ export default function OnboardingPage() {
               style={{ background: `${ACCENT_COLORS[accent]?.hex}12`, color: ACCENT_COLORS[accent]?.hex }}
             >
               <span style={{ fontSize: '12px', fontWeight: 600 }}>
-                {ACCENT_COLORS[accent]?.label} · {font === 'corporate-sans' ? 'Modern Sans' : 'Classic Serif'}
+                {ACCENT_COLORS[accent]?.label} · {FONT_OPTIONS.find(f => f.id === font)?.label ?? 'Modern Sans'}
               </span>
             </div>
           </div>

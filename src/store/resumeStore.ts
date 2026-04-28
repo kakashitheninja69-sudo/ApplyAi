@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ResumeData, WorkExperience, Education, Skill, TemplateId, AccentColor, TypographyStyle } from '@/types/resume'
+import type { ResumeData, WorkExperience, Education, Skill, Project, TemplateId, AccentColor, TypographyStyle } from '@/types/resume'
 import { generateId } from '@/lib/utils'
 
 const FREE_CREDITS = 3
@@ -44,6 +44,14 @@ interface ResumeStore {
   // skills
   addSkill: (name: string, category?: Skill['category']) => void
   removeSkill: (id: string) => void
+  // projects
+  addProject: () => void
+  updateProject: (id: string, patch: Partial<Project>) => void
+  removeProject: (id: string) => void
+  addProjectBullet: (projectId: string) => void
+  updateProjectBullet: (projectId: string, index: number, value: string) => void
+  removeProjectBullet: (projectId: string, index: number) => void
+  replaceProjectBullets: (projectId: string, bullets: string[]) => void
   // summary
   setSummary: (s: string) => void
 }
@@ -56,6 +64,7 @@ const DEFAULT_DATA: ResumeData = {
   work: [{ id: generateId(), company: '', role: '', startDate: '', endDate: '', current: false, bullets: [''] }],
   education: [{ id: generateId(), institution: '', degree: '', field: '', startDate: '', endDate: '', gpa: '' }],
   skills: [],
+  projects: [],
   summary: '',
 }
 
@@ -150,6 +159,47 @@ export const useResumeStore = create<ResumeStore>()(
         set((s) => ({ data: { ...s.data, education: s.data.education.map((e) => e.id === id ? { ...e, ...patch } : e) } })),
       removeEducation: (id) =>
         set((s) => ({ data: { ...s.data, education: s.data.education.filter((e) => e.id !== id) } })),
+
+      addProject: () =>
+        set((s) => ({
+          data: {
+            ...s.data,
+            projects: [...s.data.projects, { id: generateId(), name: '', role: '', url: '', startDate: '', endDate: '', current: false, bullets: [''] }],
+          },
+        })),
+      updateProject: (id, patch) =>
+        set((s) => ({ data: { ...s.data, projects: s.data.projects.map((p) => p.id === id ? { ...p, ...patch } : p) } })),
+      removeProject: (id) =>
+        set((s) => ({ data: { ...s.data, projects: s.data.projects.filter((p) => p.id !== id) } })),
+      addProjectBullet: (projectId) =>
+        set((s) => ({
+          data: { ...s.data, projects: s.data.projects.map((p) => p.id === projectId ? { ...p, bullets: [...p.bullets, ''] } : p) },
+        })),
+      updateProjectBullet: (projectId, index, value) =>
+        set((s) => ({
+          data: {
+            ...s.data,
+            projects: s.data.projects.map((p) => {
+              if (p.id !== projectId) return p
+              const bullets = [...p.bullets]
+              bullets[index] = value
+              return { ...p, bullets }
+            }),
+          },
+        })),
+      removeProjectBullet: (projectId, index) =>
+        set((s) => ({
+          data: {
+            ...s.data,
+            projects: s.data.projects.map((p) =>
+              p.id !== projectId ? p : { ...p, bullets: p.bullets.filter((_, i) => i !== index) }
+            ),
+          },
+        })),
+      replaceProjectBullets: (projectId, bullets) =>
+        set((s) => ({
+          data: { ...s.data, projects: s.data.projects.map((p) => p.id === projectId ? { ...p, bullets } : p) },
+        })),
 
       addSkill: (name, category = 'technical') =>
         set((s) => ({ data: { ...s.data, skills: [...s.data.skills, { id: generateId(), name, category }] } })),

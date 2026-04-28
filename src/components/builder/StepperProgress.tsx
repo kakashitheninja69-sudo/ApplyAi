@@ -2,11 +2,11 @@ import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
 
 const STEPS = [
-  { n: 1, label: 'Template',   icon: 'design_services' },
-  { n: 2, label: 'Contact',    icon: 'person' },
-  { n: 3, label: 'Experience', icon: 'work' },
-  { n: 4, label: 'Education',  icon: 'school' },
-  { n: 5, label: 'Skills',     icon: 'psychology' },
+  { n: 1, label: 'Contact',    icon: 'person' },
+  { n: 2, label: 'Experience', icon: 'work' },
+  { n: 3, label: 'Education',  icon: 'school' },
+  { n: 4, label: 'Skills',     icon: 'psychology' },
+  { n: 5, label: 'Projects',   icon: 'code' },
   { n: 6, label: 'Summary',    icon: 'auto_awesome' },
 ]
 

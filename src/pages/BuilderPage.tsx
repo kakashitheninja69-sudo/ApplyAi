@@ -9,28 +9,28 @@ import StepperProgress       from '@/components/builder/StepperProgress'
 import LivePreview           from '@/components/builder/LivePreview'
 import AIToolsPanel          from '@/components/ai-tools/AIToolsPanel'
 import StepTransitionScreen  from '@/components/builder/StepTransitionScreen'
-import Step1Template         from '@/components/builder/steps/Step1Template'
-import Step2Contact          from '@/components/builder/steps/Step2Contact'
-import Step3Work             from '@/components/builder/steps/Step3Work'
-import Step4Education        from '@/components/builder/steps/Step4Education'
-import Step5Skills           from '@/components/builder/steps/Step5Skills'
+import Step1Contact          from '@/components/builder/steps/Step2Contact'
+import Step2Work             from '@/components/builder/steps/Step3Work'
+import Step3Education        from '@/components/builder/steps/Step4Education'
+import Step4Skills           from '@/components/builder/steps/Step5Skills'
+import Step5Projects         from '@/components/builder/steps/Step5Projects'
 import Step6Summary          from '@/components/builder/steps/Step6Summary'
 
 const STEP_COMPONENTS = [
-  Step1Template,
-  Step2Contact,
-  Step3Work,
-  Step4Education,
-  Step5Skills,
+  Step1Contact,
+  Step2Work,
+  Step3Education,
+  Step4Skills,
+  Step5Projects,
   Step6Summary,
 ]
 
 const STEP_LABELS = [
-  'Template',
   'Contact Info',
   'Work Experience',
   'Education',
   'Skills',
+  'Projects',
   'Professional Summary',
 ]
 

@@ -9,34 +9,34 @@ interface Props {
 }
 
 const STEP_INFO = [
-  { label: 'Template',             icon: 'palette',       color: '#7c3aed' },
   { label: 'Contact Info',         icon: 'contact_page',  color: '#003fb1' },
   { label: 'Work Experience',      icon: 'work_history',  color: '#006c4a' },
   { label: 'Education',            icon: 'school',        color: '#0d9488' },
   { label: 'Skills',               icon: 'psychology',    color: '#ea580c' },
+  { label: 'Projects',             icon: 'code',          color: '#7c3aed' },
   { label: 'Professional Summary', icon: 'description',   color: '#db2777' },
 ]
 
 const DONE_MESSAGES: Record<number, { headline: string; tip: string }> = {
   1: {
-    headline: 'Great choice!',
-    tip: 'Your template is set. Now let\'s fill in your personal details.',
-  },
-  2: {
     headline: 'Contact info saved!',
     tip: 'Recruiters need to reach you — that\'s the most important step done.',
   },
-  3: {
+  2: {
     headline: 'Work history added!',
     tip: 'That\'s the most-read section of any resume. Well done!',
   },
-  4: {
+  3: {
     headline: 'Education complete!',
     tip: 'Just a couple of sections left — you\'re flying through this.',
   },
-  5: {
+  4: {
     headline: 'Skills locked in!',
     tip: 'ATS engines look for keyword matches — great move adding those skills.',
+  },
+  5: {
+    headline: 'Projects added!',
+    tip: 'Projects show what you can actually build. Recruiters love seeing real work.',
   },
 }
 

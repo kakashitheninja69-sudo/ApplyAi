@@ -11,7 +11,12 @@ export function accentHex(data: ResumeData): string {
 }
 
 export function headingFont(data: ResumeData): string {
-  return data.typography === 'classic-serif' ? 'Newsreader, serif' : 'Manrope, sans-serif'
+  switch (data.typography) {
+    case 'classic-serif':   return 'Newsreader, serif'
+    case 'modern-rounded':  return 'DM Sans, sans-serif'
+    case 'executive-serif': return 'Lora, serif'
+    default:                return 'Manrope, sans-serif'
+  }
 }
 
 export { formatDateRange }

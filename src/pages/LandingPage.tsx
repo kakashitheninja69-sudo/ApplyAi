@@ -29,10 +29,43 @@ const TEAM = [
 
 export default function LandingPage() {
   const navigate  = useNavigate()
-  const openModal = useResumeStore((s) => s.openAuthModal)
+  const { openAuthModal, data, currentStep } = useResumeStore((s) => ({
+    openAuthModal: s.openAuthModal,
+    data: s.data,
+    currentStep: s.currentStep,
+  }))
+  const hasResume = !!data.contact.name
 
   return (
     <div className="min-h-screen bg-background text-on-background">
+
+      {/* ── Resume continuation banner ── */}
+      {hasResume && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-3.5 rounded-2xl shadow-2xl"
+          style={{ background: 'linear-gradient(135deg, #003fb1 0%, #0055f5 100%)', minWidth: '340px', maxWidth: '480px' }}
+        >
+          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-white" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>description</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '1px' }}>
+              Resume in progress
+            </p>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {data.contact.name} · Step {currentStep} of 6
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/builder')}
+            className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
+          >
+            Continue
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
+          </button>
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-16">

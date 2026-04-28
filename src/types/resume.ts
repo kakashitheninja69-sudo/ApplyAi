@@ -39,7 +39,11 @@ export type AccentColor =
   | 'orange'
   | 'teal'
 
-export type TypographyStyle = 'corporate-sans' | 'classic-serif'
+export type TypographyStyle =
+  | 'corporate-sans'   // Manrope — bold & modern
+  | 'classic-serif'    // Newsreader — elegant serif
+  | 'modern-rounded'   // DM Sans — friendly & clear
+  | 'executive-serif'  // Lora — polished & senior
 
 export interface ContactInfo {
   name: string
@@ -77,6 +81,17 @@ export interface Skill {
   category: 'technical' | 'soft' | 'language' | 'tool'
 }
 
+export interface Project {
+  id: string
+  name: string
+  role: string
+  url: string
+  startDate: string
+  endDate: string
+  current: boolean
+  bullets: string[]
+}
+
 export interface ResumeData {
   template: TemplateId
   accentColor: AccentColor
@@ -85,5 +100,6 @@ export interface ResumeData {
   work: WorkExperience[]
   education: Education[]
   skills: Skill[]
+  projects: Project[]
   summary: string
 }

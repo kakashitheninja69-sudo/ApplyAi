@@ -72,12 +72,11 @@ export default function BuilderPage() {
         {/* Brand — fixed left */}
         <div className="flex items-center gap-2 px-4 shrink-0">
           <button
-            onClick={() => navigate('/')}
-            title="Exit to home (progress is auto-saved)"
+            onClick={() => currentStep > 1 ? prevStep() : navigate('/')}
+            title={currentStep > 1 ? 'Go back one step' : 'Exit to home (progress auto-saved)'}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-all"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>home</span>
-            <span className="text-xs font-medium hidden sm:block">Exit</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
           </button>
           <span className="font-h1 font-bold text-primary">ApplyAI</span>
           {/* Auto-saved indicator */}
@@ -97,12 +96,6 @@ export default function BuilderPage() {
           <span className="font-body-sm text-body-sm text-on-surface-variant hidden lg:block whitespace-nowrap">
             Step {currentStep} / 6
           </span>
-          {currentStep > 1 && (
-            <Button variant="outline" size="sm" onClick={prevStep}>
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chevron_left</span>
-              Back
-            </Button>
-          )}
           <Button size="sm" onClick={handleContinue}>
             {isLast ? (
               <>

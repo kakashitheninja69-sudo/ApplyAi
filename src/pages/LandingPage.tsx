@@ -90,7 +90,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={openModal} className="ai-sparkle-button px-8 py-4 rounded-xl font-h2 text-lg flex items-center justify-center gap-3">
+              <button onClick={openAuthModal} className="ai-sparkle-button px-8 py-4 rounded-xl font-h2 text-lg flex items-center justify-center gap-3">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>rocket_launch</span>
                 Build My Resume Free
               </button>
@@ -404,7 +404,7 @@ export default function LandingPage() {
             <p className="font-body-lg text-body-lg text-on-surface-variant mb-10 max-w-xl">
               Join 200,000+ professionals who have upgraded their career narrative with ApplyAI.
             </p>
-            <button onClick={openModal} className="ai-sparkle-button px-10 py-5 rounded-xl font-h2 text-xl flex items-center gap-3">
+            <button onClick={openAuthModal} className="ai-sparkle-button px-10 py-5 rounded-xl font-h2 text-xl flex items-center gap-3">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
               Start Your Resume — Free
             </button>

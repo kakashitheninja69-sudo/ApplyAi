@@ -8,7 +8,8 @@ import PrivacyPage   from './pages/PrivacyPage'
 import TermsPage     from './pages/TermsPage'
 import SupportPage   from './pages/SupportPage'
 import ApiPage       from './pages/ApiPage'
-import OnboardingPage from './pages/OnboardingPage'
+import OnboardingPage  from './pages/OnboardingPage'
+import DashboardPage   from './pages/DashboardPage'
 import AuthModal     from './components/auth/AuthModal'
 import UpgradeModal  from './components/ui/UpgradeModal'
 import TopNav        from './components/layout/TopNav'
@@ -27,8 +28,9 @@ function AnimatedRoutes() {
     <div key={location.pathname} className="page-transition">
       <Routes location={location}>
         <Route path="/"          element={<LandingPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/builder"   element={<BuilderPage />} />
+        <Route path="/onboarding"  element={<OnboardingPage />} />
+        <Route path="/dashboard"   element={<DashboardPage />} />
+        <Route path="/builder"     element={<BuilderPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/privacy"   element={<PrivacyPage />} />
         <Route path="/terms"     element={<TermsPage />} />
@@ -43,7 +45,7 @@ function AnimatedRoutes() {
 // div never breaks the nav's `position: fixed` containing block.
 function AppShell() {
   const location = useLocation()
-  const isBuilder = location.pathname === '/builder' || location.pathname === '/onboarding'
+  const isBuilder = location.pathname === '/builder' || location.pathname === '/onboarding' || location.pathname === '/dashboard'
   return (
     <>
       <ScrollToTop />

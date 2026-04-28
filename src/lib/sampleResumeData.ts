@@ -15,6 +15,7 @@ export const SAMPLE_RESUME_DATA: ResumeData = {
   },
   summary:
     'Strategic product designer with 8+ years crafting user-centred experiences for SaaS platforms. Proven track record of increasing conversion and engagement through data-informed design decisions and scalable design systems.',
+  projects: [],
   work: [
     {
       id: '1',

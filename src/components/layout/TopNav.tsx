@@ -120,14 +120,14 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
                 </span>
               </div>
 
-              {/* Continue Resume button */}
+              {/* My Resumes button */}
               <button
-                onClick={() => navigate('/builder')}
+                onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-body-sm text-[13px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{ background: 'linear-gradient(135deg, #003fb1 0%, #0055f5 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(0,63,177,0.25)' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '15px', fontVariationSettings: "'FILL' 1" }}>description</span>
-                <span className="hidden sm:inline">My Resume</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '15px', fontVariationSettings: "'FILL' 1" }}>folder_open</span>
+                <span className="hidden sm:inline">My Resumes</span>
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
               </button>
 

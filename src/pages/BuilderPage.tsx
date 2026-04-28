@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useResumeStore } from '@/store/resumeStore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { saveResume, saveVersion } from '@/lib/firestore'
 import StepperProgress       from '@/components/builder/StepperProgress'
 import LivePreview           from '@/components/builder/LivePreview'
 import AIToolsPanel          from '@/components/ai-tools/AIToolsPanel'
@@ -39,10 +40,38 @@ type RightPanel = 'preview' | 'ai'
 export default function BuilderPage() {
   const navigate  = useNavigate()
   const { currentUser } = useAuth()
-  const { currentStep, nextStep, prevStep, setStep, data, openAuthModal, triggerExport } = useResumeStore()
+  const { currentStep, nextStep, prevStep, setStep, data, openAuthModal, triggerExport,
+          resumeId, resumeName, isSaving, lastSaved,
+          setResumeId, setIsSaving, setLastSaved } = useResumeStore()
   const [rightPanel,      setRightPanel]      = useState<RightPanel>('preview')
   const [showTransition,  setShowTransition]  = useState(false)
   const [pendingStep,     setPendingStep]      = useState<number>(2)
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const resumeIdRef   = useRef(resumeId)
+  const resumeNameRef = useRef(resumeName)
+  useEffect(() => { resumeIdRef.current = resumeId }, [resumeId])
+  useEffect(() => { resumeNameRef.current = resumeName }, [resumeName])
+
+  // Auto-save to Firestore whenever data changes (3 s debounce)
+  useEffect(() => {
+    if (!currentUser) return
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      setIsSaving(true)
+      try {
+        const id = await saveResume(
+          currentUser.uid, resumeIdRef.current,
+          data, resumeNameRef.current || 'My Resume',
+        )
+        if (!resumeIdRef.current) setResumeId(id)
+        setLastSaved(Date.now())
+      } finally {
+        setIsSaving(false)
+      }
+    }, 3000)
+    return () => clearTimeout(saveTimer.current)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, currentUser])
 
   function handleExport() {
     if (!currentUser) { openAuthModal(); return }
@@ -79,10 +108,20 @@ export default function BuilderPage() {
             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
           </button>
           <span className="font-h1 font-bold text-primary">ApplyAI</span>
-          {/* Auto-saved indicator */}
-          <div className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-100 ml-1">
-            <span className="material-symbols-outlined text-green-500" style={{ fontSize: '11px', fontVariationSettings: "'FILL' 1" }}>cloud_done</span>
-            <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a' }}>Auto-saved</span>
+          {/* Save status indicator */}
+          <div className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full ml-1" style={{
+            background: isSaving ? '#f0f4ff' : lastSaved ? '#f0fdf4' : '#f8fafc',
+            border: `1px solid ${isSaving ? '#c7d7f7' : lastSaved ? '#bbf7d0' : '#e2e8f0'}`,
+          }}>
+            <span
+              className={cn('material-symbols-outlined', isSaving && 'animate-spin')}
+              style={{ fontSize: '11px', color: isSaving ? '#1a56db' : lastSaved ? '#16a34a' : '#94a3b8', fontVariationSettings: "'FILL' 1" }}
+            >
+              {isSaving ? 'progress_activity' : lastSaved ? 'cloud_done' : 'cloud_off'}
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: isSaving ? '#1a56db' : lastSaved ? '#16a34a' : '#94a3b8' }}>
+              {isSaving ? 'Saving…' : lastSaved ? 'Saved' : 'Local only'}
+            </span>
           </div>
         </div>
 
@@ -93,6 +132,33 @@ export default function BuilderPage() {
 
         {/* Actions — fixed right */}
         <div className="flex items-center gap-2 px-4 shrink-0">
+          {/* Save Version */}
+          {currentUser && resumeId && (
+            <button
+              onClick={async () => {
+                setIsSaving(true)
+                try {
+                  await saveVersion(currentUser.uid, resumeId, data,
+                    new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))
+                } finally { setIsSaving(false) }
+              }}
+              className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all border border-gray-200"
+              title="Save a named version you can restore later"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>bookmark_add</span>
+              Save Version
+            </button>
+          )}
+          {/* My Resumes */}
+          {currentUser && (
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all border border-gray-200"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>folder_open</span>
+              My Resumes
+            </button>
+          )}
           <span className="font-body-sm text-body-sm text-on-surface-variant hidden lg:block whitespace-nowrap">
             Step {currentStep} / 6
           </span>

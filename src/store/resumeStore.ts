@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ResumeData, WorkExperience, Education, Skill, Project, TemplateId, AccentColor, TypographyStyle } from '@/types/resume'
 import { generateId } from '@/lib/utils'
+import type { ResumeListItem } from '@/lib/firestore'
 
 const FREE_CREDITS = 3
 
@@ -11,6 +12,18 @@ interface ResumeStore {
   isUpgradeModalOpen: boolean
   credits: number
   data: ResumeData
+  // cloud persistence
+  resumeId: string | null
+  resumeName: string
+  isSaving: boolean
+  lastSaved: number | null
+  savedResumes: ResumeListItem[]
+  setResumeId: (id: string | null) => void
+  setResumeName: (name: string) => void
+  setIsSaving: (v: boolean) => void
+  setLastSaved: (ts: number) => void
+  setSavedResumes: (list: ResumeListItem[]) => void
+  loadResumeData: (data: ResumeData, id: string, name: string) => void
   // navigation
   setStep: (step: number) => void
   nextStep: () => void
@@ -80,6 +93,18 @@ export const useResumeStore = create<ResumeStore>()(
       credits: FREE_CREDITS,
       exportTrigger: 0,
       data: DEFAULT_DATA,
+      resumeId: null,
+      resumeName: 'My Resume',
+      isSaving: false,
+      lastSaved: null,
+      savedResumes: [],
+
+      setResumeId:    (id)   => set({ resumeId: id }),
+      setResumeName:  (name) => set({ resumeName: name }),
+      setIsSaving:    (v)    => set({ isSaving: v }),
+      setLastSaved:   (ts)   => set({ lastSaved: ts }),
+      setSavedResumes:(list) => set({ savedResumes: list }),
+      loadResumeData: (data, id, name) => set({ data, resumeId: id, resumeName: name, currentStep: 1 }),
 
       setStep: (step) => set({ currentStep: step }),
       nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 6) })),
@@ -216,11 +241,20 @@ export const useResumeStore = create<ResumeStore>()(
     }),
     {
       name: 'applyai-resume',
-      partialize: (state) => ({ data: state.data, currentStep: state.currentStep, credits: state.credits }),
+      partialize: (state) => ({
+        data: state.data,
+        currentStep: state.currentStep,
+        credits: state.credits,
+        resumeId: state.resumeId,
+        resumeName: state.resumeName,
+      }),
       merge: (persisted: any, current) => ({
         ...current,
         ...persisted,
         data: { ...current.data, ...(persisted?.data ?? {}) },
+        savedResumes: [],
+        isSaving: false,
+        lastSaved: null,
       }),
     }
   )

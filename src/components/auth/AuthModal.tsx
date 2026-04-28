@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResumeStore } from '@/store/resumeStore'
 import { signInWithGoogle, signUpWithEmail, signInWithEmail } from '@/lib/firebase'
+import { loadUserResumes, loadResume } from '@/lib/firestore'
 import { cn } from '@/lib/utils'
+import type { User } from '@/lib/firebase'
 
 type Tab = 'signup' | 'login'
 
 const FORMSPREE_FORM_ID = 'mlgavpae'
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, data } = useResumeStore()
+  const { isAuthModalOpen, closeAuthModal, data, loadResumeData, setResumeId, setResumeName, setSavedResumes } = useResumeStore()
   const navigate = useNavigate()
 
   const [tab, setTab]           = useState<Tab>('signup')
@@ -33,13 +35,28 @@ export default function AuthModal() {
     setError('')
   }
 
-  // New users → onboarding. Returning users with existing resume → builder.
-  function goAfterAuth(isNewSignup: boolean) {
+  // After auth: load cloud resumes and route intelligently
+  async function goAfterAuth(user: User, isNewSignup: boolean) {
     closeAuthModal()
-    const hasResume = !!data.contact.name
-    if (isNewSignup || !hasResume) {
-      navigate('/onboarding')
-    } else {
+    if (isNewSignup) { navigate('/onboarding'); return }
+    try {
+      const resumes = await loadUserResumes(user.uid)
+      setSavedResumes(resumes)
+      if (resumes.length === 0) {
+        navigate('/onboarding')
+      } else if (resumes.length === 1) {
+        // Auto-load single resume into builder
+        const resumeData = await loadResume(user.uid, resumes[0].id)
+        if (resumeData) {
+          loadResumeData(resumeData, resumes[0].id, resumes[0].name)
+          navigate('/builder')
+        } else {
+          navigate('/dashboard')
+        }
+      } else {
+        navigate('/dashboard')
+      }
+    } catch {
       navigate('/builder')
     }
   }
@@ -48,8 +65,8 @@ export default function AuthModal() {
     setError('')
     setGLoading(true)
     try {
-      await signInWithGoogle()
-      goAfterAuth(false)
+      const user = await signInWithGoogle()
+      await goAfterAuth(user, false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -64,13 +81,13 @@ export default function AuthModal() {
     if (suPass.length < 6) { setError('Password must be at least 6 characters.'); return }
     setLoading(true)
     try {
-      await signUpWithEmail(name.trim(), suEmail, suPass)
+      const user = await signUpWithEmail(name.trim(), suEmail, suPass)
       try {
         const fd = new FormData()
         fd.append('name', name); fd.append('email', suEmail); fd.append('source', 'applyai-signup')
         fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, { method: 'POST', body: fd })
       } catch { /* non-critical */ }
-      goAfterAuth(true)
+      await goAfterAuth(user, true)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {
@@ -83,8 +100,8 @@ export default function AuthModal() {
     setError('')
     setLoading(true)
     try {
-      await signInWithEmail(liEmail, liPass)
-      goAfterAuth(false)
+      const user = await signInWithEmail(liEmail, liPass)
+      await goAfterAuth(user, false)
     } catch (e: any) {
       setError(friendlyError(e?.code))
     } finally {

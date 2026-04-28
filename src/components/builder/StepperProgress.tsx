@@ -19,11 +19,13 @@ export default function StepperProgress() {
         const done    = currentStep > step.n
         const active  = currentStep === step.n
 
+        const clickable = done || active   // allow jumping to any visited step
         return (
           <div key={step.n} className="flex items-center">
             <button
-              onClick={() => done && setStep(step.n)}
-              disabled={!done && !active}
+              onClick={() => clickable && setStep(step.n)}
+              disabled={!clickable}
+              title={clickable ? `Go to ${step.label}` : undefined}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200',
                 active  && 'bg-primary/10 text-primary',

@@ -39,7 +39,7 @@ type RightPanel = 'preview' | 'ai'
 export default function BuilderPage() {
   const navigate  = useNavigate()
   const { currentUser } = useAuth()
-  const { currentStep, nextStep, prevStep, data, openAuthModal, triggerExport } = useResumeStore()
+  const { currentStep, nextStep, prevStep, setStep, data, openAuthModal, triggerExport } = useResumeStore()
   const [rightPanel,      setRightPanel]      = useState<RightPanel>('preview')
   const [showTransition,  setShowTransition]  = useState(false)
   const [pendingStep,     setPendingStep]      = useState<number>(2)
@@ -70,14 +70,21 @@ export default function BuilderPage() {
       {/* ── Fixed Header ── */}
       <header className="flex items-center h-14 bg-white border-b border-gray-200 shrink-0 z-40">
         {/* Brand — fixed left */}
-        <div className="flex items-center gap-3 px-4 shrink-0 w-[160px]">
+        <div className="flex items-center gap-2 px-4 shrink-0">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-1 text-on-surface-variant hover:text-primary transition-colors"
+            title="Exit to home (progress is auto-saved)"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-all"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_back</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>home</span>
+            <span className="text-xs font-medium hidden sm:block">Exit</span>
           </button>
           <span className="font-h1 font-bold text-primary">ApplyAI</span>
+          {/* Auto-saved indicator */}
+          <div className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-100 ml-1">
+            <span className="material-symbols-outlined text-green-500" style={{ fontSize: '11px', fontVariationSettings: "'FILL' 1" }}>cloud_done</span>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a' }}>Auto-saved</span>
+          </div>
         </div>
 
         {/* Stepper — takes center space, never overlaps sides */}
@@ -125,17 +132,25 @@ export default function BuilderPage() {
 
           {/* Step footer nav (mobile-friendly) */}
           <div className="flex items-center justify-between px-8 py-4 border-t border-gray-100 bg-white shrink-0">
-            <div className="flex gap-1.5">
-              {Array.from({ length: 6 }, (_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'h-1.5 rounded-full transition-all duration-300',
-                    i + 1 < currentStep  ? 'w-4 bg-secondary' :
-                    i + 1 === currentStep ? 'w-6 bg-primary' : 'w-4 bg-outline-variant'
-                  )}
-                />
-              ))}
+            <div className="flex gap-1.5 items-center">
+              {Array.from({ length: 6 }, (_, i) => {
+                const sn = i + 1
+                const visited = sn <= currentStep
+                return (
+                  <button
+                    key={i}
+                    onClick={() => visited && setStep(sn)}
+                    disabled={!visited}
+                    title={visited ? STEP_LABELS[i] : undefined}
+                    className={cn(
+                      'h-1.5 rounded-full transition-all duration-300',
+                      visited ? 'cursor-pointer hover:opacity-70' : 'cursor-default',
+                      sn < currentStep  ? 'w-4 bg-secondary' :
+                      sn === currentStep ? 'w-6 bg-primary' : 'w-4 bg-outline-variant'
+                    )}
+                  />
+                )
+              })}
             </div>
             <div className="flex items-center gap-2">
               {currentStep > 1 && (

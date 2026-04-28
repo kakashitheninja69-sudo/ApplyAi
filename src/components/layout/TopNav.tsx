@@ -106,6 +106,7 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
 
           {currentUser ? (
             <div className="flex items-center gap-2">
+              {/* Avatar pill */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container">
                 {currentUser.photoURL ? (
                   <img src={currentUser.photoURL} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -118,6 +119,18 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
                   {currentUser.displayName || currentUser.email}
                 </span>
               </div>
+
+              {/* Continue Resume button */}
+              <button
+                onClick={() => navigate('/builder')}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-body-sm text-[13px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ background: 'linear-gradient(135deg, #003fb1 0%, #0055f5 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(0,63,177,0.25)' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px', fontVariationSettings: "'FILL' 1" }}>description</span>
+                <span className="hidden sm:inline">My Resume</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
+              </button>
+
               <button
                 onClick={() => signOut()}
                 className="font-body-sm text-[12px] font-medium text-on-surface-variant hover:text-error transition-colors px-2 py-1.5"

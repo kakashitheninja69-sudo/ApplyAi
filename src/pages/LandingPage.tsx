@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import Footer from '@/components/layout/Footer'
 import { useResumeStore } from '@/store/resumeStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
@@ -32,7 +33,9 @@ export default function LandingPage() {
   const openAuthModal = useResumeStore((s) => s.openAuthModal)
   const data          = useResumeStore((s) => s.data)
   const currentStep   = useResumeStore((s) => s.currentStep)
-  const hasResume     = !!data.contact.name
+  const { currentUser } = useAuth()
+  // Show banner whenever user is logged in OR has any resume data saved
+  const hasResume     = !!currentUser || !!data.contact.name || currentStep > 1
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -48,10 +51,10 @@ export default function LandingPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '1px' }}>
-              Resume in progress
+              {data.contact.name ? `${data.contact.name}'s Resume` : 'Your resume is waiting'}
             </p>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {data.contact.name} · Step {currentStep} of 6
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+              {data.contact.name ? `Step ${currentStep} of 6 · tap to continue` : 'Continue where you left off'}
             </p>
           </div>
           <button

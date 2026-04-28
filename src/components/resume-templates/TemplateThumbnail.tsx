@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState, useMemo } from 'react'
+import { useRef, useEffect, useState, useMemo, Component } from 'react'
+import type { ReactNode } from 'react'
 import ModernSidebar       from './ModernSidebar'
 import ClassicProfessional from './ClassicProfessional'
 import MinimalClean        from './MinimalClean'
@@ -26,7 +27,7 @@ import DarkElegant         from './DarkElegant'
 import { SAMPLE_RESUME_DATA } from '@/lib/sampleResumeData'
 import type { TemplateId, AccentColor } from '@/types/resume'
 
-const COMPONENTS = {
+const COMPONENTS: Record<TemplateId, React.ComponentType<{ data: typeof SAMPLE_RESUME_DATA }>> = {
   'ats-clean':            AtsClean,
   'google-standard':      GoogleStandard,
   'amazon-results':       AmazonResults,
@@ -53,6 +54,32 @@ const COMPONENTS = {
   'dark-elegant':         DarkElegant,
 }
 
+// ── Error boundary so a crashed template never whites out the page ──────────
+class ThumbnailErrorBoundary extends Component<
+  { children: ReactNode; label: string },
+  { error: boolean }
+> {
+  state = { error: false }
+  static getDerivedStateFromError() { return { error: true } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{
+          width: '100%', height: '100%', minHeight: '120px',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: '#f8fafc', color: '#94a3b8',
+          fontSize: '11px', gap: '6px',
+        }}>
+          <span style={{ fontSize: '28px' }}>📄</span>
+          <span>{this.props.label}</span>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 interface Props {
   templateId: TemplateId
   accentColor?: AccentColor
@@ -60,13 +87,21 @@ interface Props {
 
 export default function TemplateThumbnail({ templateId, accentColor = 'primary' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.3)
+  // Start at 0 so we don't flash the wrong size; wait for ResizeObserver
+  const [scale, setScale] = useState(0)
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+
+    // Fire once immediately using current width, then keep watching
+    const update = (width: number) => {
+      if (width > 0) setScale(width / 794)
+    }
+    update(el.getBoundingClientRect().width)
+
     const ro = new ResizeObserver(([entry]) => {
-      setScale(entry.contentRect.width / 794)
+      update(entry.contentRect.width)
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -75,24 +110,39 @@ export default function TemplateThumbnail({ templateId, accentColor = 'primary' 
   const Component = COMPONENTS[templateId]
   const data = useMemo(
     () => ({ ...SAMPLE_RESUME_DATA, template: templateId, accentColor }),
-    [templateId, accentColor]
+    [templateId, accentColor],
   )
 
-  const scaledH = Math.round(1123 * scale)
+  const scaledH = scale > 0 ? Math.round(1123 * scale) : 0
 
   return (
-    <div ref={containerRef} style={{ width: '100%', overflow: 'hidden', position: 'relative', height: `${scaledH}px` }}>
-      <div
-        style={{
-          transform:       `scale(${scale})`,
-          transformOrigin: 'top left',
-          width:           '794px',
-          pointerEvents:   'none',
-          userSelect:      'none',
-        }}
-      >
-        <Component data={data} />
-      </div>
+    // containerRef div measures the available width
+    <div
+      ref={containerRef}
+      style={{
+        width:    '100%',
+        overflow: 'hidden',
+        position: 'relative',
+        height:   scaledH > 0 ? `${scaledH}px` : '100%',
+        // Show a subtle shimmer while we wait for the first ResizeObserver tick
+        background: scale === 0 ? '#f1f5f9' : undefined,
+      }}
+    >
+      {scale > 0 && Component && (
+        <ThumbnailErrorBoundary label={templateId}>
+          <div
+            style={{
+              transform:       `scale(${scale})`,
+              transformOrigin: 'top left',
+              width:           '794px',
+              pointerEvents:   'none',
+              userSelect:      'none',
+            }}
+          >
+            <Component data={data} />
+          </div>
+        </ThumbnailErrorBoundary>
+      )}
     </div>
   )
 }

@@ -21,9 +21,13 @@ export default function StartupModern({ data }: TemplateProps) {
       <div style={{ width: '48px', height: '3px', background: accent, borderRadius: '2px', marginBottom: '16px' }} />
       {/* Contact */}
       {contactParts.length > 0 && (
-        <p style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '48px', letterSpacing: '0.01em' }}>
-          {contactParts.join('  ·  ')}
-        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', fontSize: '10px', color: '#94a3b8', marginBottom: '48px', letterSpacing: '0.01em' }}>
+          {contact.email    && <span>✉ {contact.email}</span>}
+          {contact.phone    && <span>☎ {contact.phone}</span>}
+          {contact.location && <span>⊙ {contact.location}</span>}
+          {contact.linkedin && <span>in {contact.linkedin}</span>}
+          {contact.website  && <span>↗ {contact.website}</span>}
+        </div>
       )}
 
       {summary && (

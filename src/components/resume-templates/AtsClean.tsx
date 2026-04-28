@@ -54,9 +54,13 @@ export default function AtsClean({ data }: TemplateProps) {
           </p>
         )}
         {contactParts.length > 0 && (
-          <p style={{ fontSize: '10px', color: '#000', marginTop: '6px' }}>
-            {contactParts.join(' · ')}
-          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', fontSize: '10px', color: '#000', marginTop: '6px' }}>
+            {contact.email    && <span>✉ {contact.email}</span>}
+            {contact.phone    && <span>☎ {contact.phone}</span>}
+            {contact.location && <span>⊙ {contact.location}</span>}
+            {contact.linkedin && <span>in {contact.linkedin}</span>}
+            {contact.website  && <span>↗ {contact.website}</span>}
+          </div>
         )}
       </div>
 

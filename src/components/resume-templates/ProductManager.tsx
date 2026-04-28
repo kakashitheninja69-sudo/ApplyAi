@@ -25,7 +25,13 @@ export default function ProductManager({ data }: TemplateProps) {
         {contact.title && (
           <p style={{ fontSize: '13px', color: accent, fontWeight: 700, margin: '0 0 10px' }}>{contact.title}</p>
         )}
-        <p style={{ fontSize: '10px', color: '#64748b' }}>{contactParts.join('  ·  ')}</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', fontSize: '10px', color: '#64748b' }}>
+          {contact.email    && <span>✉ {contact.email}</span>}
+          {contact.phone    && <span>☎ {contact.phone}</span>}
+          {contact.location && <span>⊙ {contact.location}</span>}
+          {contact.linkedin && <span>in {contact.linkedin}</span>}
+          {contact.website  && <span>↗ {contact.website}</span>}
+        </div>
       </div>
 
       <div style={{ padding: '28px 48px' }}>

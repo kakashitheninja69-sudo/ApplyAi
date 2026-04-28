@@ -47,9 +47,13 @@ export default function AcademicCv({ data }: TemplateProps) {
           </p>
         )}
         {contactParts.length > 0 && (
-          <p style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
-            {contactParts.join(' · ')}
-          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+            {contact.email    && <span>✉ {contact.email}</span>}
+            {contact.phone    && <span>☎ {contact.phone}</span>}
+            {contact.location && <span>⊙ {contact.location}</span>}
+            {contact.linkedin && <span>in {contact.linkedin}</span>}
+            {contact.website  && <span>↗ {contact.website}</span>}
+          </div>
         )}
       </div>
 

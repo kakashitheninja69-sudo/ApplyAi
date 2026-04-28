@@ -69,9 +69,13 @@ export default function BankingFormal({ data }: TemplateProps) {
 
       {/* Contact centered */}
       {contactParts.length > 0 && (
-        <p style={{ textAlign: 'center', fontSize: '10px', color: '#475569', marginBottom: '20px', marginTop: '8px' }}>
-          {contactParts.join('  ·  ')}
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '2px 14px', fontSize: '10px', color: '#475569', marginBottom: '20px', marginTop: '8px' }}>
+          {contact.email    && <span>✉ {contact.email}</span>}
+          {contact.phone    && <span>☎ {contact.phone}</span>}
+          {contact.location && <span>⊙ {contact.location}</span>}
+          {contact.linkedin && <span>in {contact.linkedin}</span>}
+          {contact.website  && <span>↗ {contact.website}</span>}
+        </div>
       )}
 
       {summary && (

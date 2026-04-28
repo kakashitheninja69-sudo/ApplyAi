@@ -60,12 +60,12 @@ export default function AmazonResults({ data }: TemplateProps) {
             </p>
           )}
         </div>
-        <div style={{ textAlign: 'right', fontSize: '10px', color: '#475569' }}>
-          {contactParts.map((part, i) => (
-            <p key={i} style={{ margin: '2px 0' }}>
-              {part}
-            </p>
-          ))}
+        <div style={{ textAlign: 'right', fontSize: '10px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {contact.email    && <span>✉ {contact.email}</span>}
+          {contact.phone    && <span>☎ {contact.phone}</span>}
+          {contact.location && <span>⊙ {contact.location}</span>}
+          {contact.linkedin && <span>in {contact.linkedin}</span>}
+          {contact.website  && <span>↗ {contact.website}</span>}
         </div>
       </div>
 

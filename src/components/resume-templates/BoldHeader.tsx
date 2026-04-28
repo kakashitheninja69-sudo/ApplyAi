@@ -59,18 +59,13 @@ export default function BoldHeader({ data }: TemplateProps) {
           )}
         </div>
         {contactParts.length > 0 && (
-          <p
-            style={{
-              fontSize: '10px',
-              color: 'rgba(255,255,255,0.85)',
-              textAlign: 'right',
-              lineHeight: '1.7',
-              margin: 0,
-              flexShrink: 0,
-            }}
-          >
-            {contactParts.join('  ·  ')}
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '10px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', flexShrink: 0 }}>
+            {contact.email    && <span>✉ {contact.email}</span>}
+            {contact.phone    && <span>☎ {contact.phone}</span>}
+            {contact.location && <span>⊙ {contact.location}</span>}
+            {contact.linkedin && <span>in {contact.linkedin}</span>}
+            {contact.website  && <span>↗ {contact.website}</span>}
+          </div>
         )}
       </div>
 

@@ -131,11 +131,11 @@ export default function MetaImpact({ data }: TemplateProps) {
         >
           <MSection accent={accent} label="Contact">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '10px', color: '#475569' }}>
-              {contact.email && <p style={{ margin: 0 }}>{contact.email}</p>}
-              {contact.phone && <p style={{ margin: 0 }}>{contact.phone}</p>}
-              {contact.location && <p style={{ margin: 0 }}>{contact.location}</p>}
-              {contact.linkedin && <p style={{ margin: 0 }}>{contact.linkedin}</p>}
-              {contact.website && <p style={{ margin: 0 }}>{contact.website}</p>}
+              {contact.email    && <p style={{ margin: 0 }}>✉ {contact.email}</p>}
+              {contact.phone    && <p style={{ margin: 0 }}>☎ {contact.phone}</p>}
+              {contact.location && <p style={{ margin: 0 }}>⊙ {contact.location}</p>}
+              {contact.linkedin && <p style={{ margin: 0 }}>in {contact.linkedin}</p>}
+              {contact.website  && <p style={{ margin: 0 }}>↗ {contact.website}</p>}
             </div>
           </MSection>
 

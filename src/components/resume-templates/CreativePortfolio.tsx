@@ -25,11 +25,11 @@ export default function CreativePortfolio({ data }: TemplateProps) {
             )}
           </div>
           <div style={{ textAlign: 'right' }}>
-            {contactParts.map((c, i) => (
-              <p key={i} style={{ fontSize: '10px', color: '#64748b', margin: '1px 0' }}>{c}</p>
-            ))}
-            {contact.linkedin && <p style={{ fontSize: '10px', color: accent, margin: '1px 0' }}>{contact.linkedin}</p>}
-            {contact.website  && <p style={{ fontSize: '10px', color: accent, margin: '1px 0' }}>{contact.website}</p>}
+            {contact.email    && <p style={{ fontSize: '10px', color: '#64748b', margin: '1px 0' }}>✉ {contact.email}</p>}
+            {contact.phone    && <p style={{ fontSize: '10px', color: '#64748b', margin: '1px 0' }}>☎ {contact.phone}</p>}
+            {contact.location && <p style={{ fontSize: '10px', color: '#64748b', margin: '1px 0' }}>⊙ {contact.location}</p>}
+            {contact.linkedin && <p style={{ fontSize: '10px', color: accent,    margin: '1px 0' }}>in {contact.linkedin}</p>}
+            {contact.website  && <p style={{ fontSize: '10px', color: accent,    margin: '1px 0' }}>↗ {contact.website}</p>}
           </div>
         </div>
       </div>

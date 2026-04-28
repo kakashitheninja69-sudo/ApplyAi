@@ -19,10 +19,11 @@ export default function MinimalClean({ data }: TemplateProps) {
           )}
         </div>
         <div style={{ textAlign: 'right', fontSize: '10px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
-          {contact.email    && <span>{contact.email}</span>}
-          {contact.phone    && <span>{contact.phone}</span>}
-          {contact.location && <span>{contact.location}</span>}
-          {contact.linkedin && <span>{contact.linkedin}</span>}
+          {contact.email    && <span>✉ {contact.email}</span>}
+          {contact.phone    && <span>☎ {contact.phone}</span>}
+          {contact.location && <span>⊙ {contact.location}</span>}
+          {contact.linkedin && <span>in {contact.linkedin}</span>}
+          {contact.website  && <span>↗ {contact.website}</span>}
         </div>
       </div>
 

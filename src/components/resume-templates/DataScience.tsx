@@ -27,10 +27,11 @@ export default function DataScience({ data }: TemplateProps) {
             )}
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {contactParts.map((c, i) => (
-              <p key={i} style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>{c}</p>
-            ))}
-            {contact.website && <p style={{ fontSize: '10px', color: accent, margin: 0 }}>{contact.website}</p>}
+            {contact.email    && <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>✉ {contact.email}</p>}
+            {contact.phone    && <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>☎ {contact.phone}</p>}
+            {contact.location && <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>⊙ {contact.location}</p>}
+            {contact.linkedin && <p style={{ fontSize: '10px', color: '#94a3b8', margin: 0 }}>in {contact.linkedin}</p>}
+            {contact.website  && <p style={{ fontSize: '10px', color: accent,    margin: 0 }}>↗ {contact.website}</p>}
           </div>
         </div>
       </div>

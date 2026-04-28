@@ -90,7 +90,7 @@ export default function TemplateThumbnail({ templateId, accentColor = 'primary' 
   // Start at 0; useLayoutEffect measures and sets the real scale before
   // the browser paints, so the thumbnail is always the correct size on
   // first render — no flash, no collapsed-height issue.
-  const [scale, setScale] = useState(0)
+  const [scale, setScale] = useState(0.3)
 
   useLayoutEffect(() => {
     const el = containerRef.current
@@ -117,24 +117,19 @@ export default function TemplateThumbnail({ templateId, accentColor = 'primary' 
     [templateId, accentColor],
   )
 
-  const scaledH = scale > 0 ? Math.round(1123 * scale) : 0
+  const scaledH = Math.round(1123 * scale)
 
   return (
-    // containerRef div measures the available width
     <div
       ref={containerRef}
       style={{
         width:    '100%',
         overflow: 'hidden',
         position: 'relative',
-        // scaledH is set synchronously (via useLayoutEffect + getBoundingClientRect)
-        // before the first paint, so this is almost always a real value.
-        // The 120px fallback is just a safety net for SSR / zero-width edge cases.
-        height:   scaledH > 0 ? `${scaledH}px` : '120px',
-        background: scale === 0 ? '#f1f5f9' : undefined,
+        height:   `${scaledH}px`,
       }}
     >
-      {scale > 0 && Component && (
+      {Component && (
         <ThumbnailErrorBoundary label={templateId}>
           <div
             style={{

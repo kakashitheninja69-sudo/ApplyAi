@@ -44,6 +44,9 @@ interface ResumeStore {
   // skills
   addSkill: (name: string, category?: Skill['category']) => void
   removeSkill: (id: string) => void
+  // export trigger (lets BuilderPage header fire the PDF export in LivePreview)
+  exportTrigger: number
+  triggerExport: () => void
   // projects
   addProject: () => void
   updateProject: (id: string, patch: Partial<Project>) => void
@@ -75,11 +78,14 @@ export const useResumeStore = create<ResumeStore>()(
       isAuthModalOpen: false,
       isUpgradeModalOpen: false,
       credits: FREE_CREDITS,
+      exportTrigger: 0,
       data: DEFAULT_DATA,
 
       setStep: (step) => set({ currentStep: step }),
       nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 6) })),
       prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) })),
+
+      triggerExport: () => set((s) => ({ exportTrigger: s.exportTrigger + 1 })),
 
       openAuthModal:    () => set({ isAuthModalOpen: true }),
       closeAuthModal:   () => set({ isAuthModalOpen: false }),

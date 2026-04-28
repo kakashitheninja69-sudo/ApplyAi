@@ -39,14 +39,15 @@ type RightPanel = 'preview' | 'ai'
 export default function BuilderPage() {
   const navigate  = useNavigate()
   const { currentUser } = useAuth()
-  const { currentStep, nextStep, prevStep, data, openAuthModal } = useResumeStore()
+  const { currentStep, nextStep, prevStep, data, openAuthModal, triggerExport } = useResumeStore()
   const [rightPanel,      setRightPanel]      = useState<RightPanel>('preview')
   const [showTransition,  setShowTransition]  = useState(false)
   const [pendingStep,     setPendingStep]      = useState<number>(2)
 
   function handleExport() {
     if (!currentUser) { openAuthModal(); return }
-    window.print()
+    setRightPanel('preview')
+    triggerExport()
   }
 
   function handleContinue() {

@@ -1,4 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import { useResumeStore } from '@/store/resumeStore'
 import { useAuth } from '@/contexts/AuthContext'
 import ModernSidebar       from '@/components/resume-templates/ModernSidebar'
@@ -54,15 +56,45 @@ const TEMPLATE_MAP = {
 }
 
 export default function LivePreview() {
-  const data          = useResumeStore((s) => s.data)
-  const openAuthModal = useResumeStore((s) => s.openAuthModal)
+  const data           = useResumeStore((s) => s.data)
+  const openAuthModal  = useResumeStore((s) => s.openAuthModal)
+  const exportTrigger  = useResumeStore((s) => s.exportTrigger)
   const { currentUser } = useAuth()
   const containerRef  = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.6)
+  const printRef      = useRef<HTMLDivElement>(null)
+  const [scale, setScale]         = useState(0.6)
+  const [exporting, setExporting] = useState(false)
 
-  function handleExport() {
+  useEffect(() => {
+    if (exportTrigger > 0) doExport()
+  }, [exportTrigger])
+
+  async function handleExport() {
     if (!currentUser) { openAuthModal(); return }
-    window.print()
+    doExport()
+  }
+
+  async function doExport() {
+    if (!printRef.current) return
+    setExporting(true)
+    try {
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123,
+        logging: false,
+      })
+      const imgData = canvas.toDataURL('image/jpeg', 0.97)
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297)
+      const filename = (data.contact.name || 'resume').replace(/\s+/g, '_') + '.pdf'
+      pdf.save(filename)
+    } finally {
+      setExporting(false)
+    }
   }
 
   useEffect(() => {
@@ -84,6 +116,12 @@ export default function LivePreview() {
       ref={containerRef}
       className="h-full flex flex-col bg-surface-dim custom-scrollbar overflow-y-auto"
     >
+      {/* Off-screen full-size render for PDF capture */}
+      <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', height: '1123px', overflow: 'hidden', zIndex: -1 }}>
+        <div ref={printRef} style={{ width: '794px', height: '1123px' }}>
+          <Template data={data} />
+        </div>
+      </div>
       {/* Preview toolbar */}
       <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-2">
@@ -101,11 +139,17 @@ export default function LivePreview() {
         <div className="flex items-center gap-3">
           <span className="font-body-sm text-body-sm text-outline">{Math.round(scale * 100)}%</span>
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold ai-sparkle-button text-white"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body-sm text-body-sm font-semibold ai-sparkle-button text-white disabled:opacity-60"
             onClick={handleExport}
+            disabled={exporting}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>download</span>
-            Export PDF
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: '14px', animation: exporting ? 'spin 1s linear infinite' : 'none' }}
+            >
+              {exporting ? 'refresh' : 'download'}
+            </span>
+            {exporting ? 'Generating…' : 'Export PDF'}
           </button>
         </div>
       </div>

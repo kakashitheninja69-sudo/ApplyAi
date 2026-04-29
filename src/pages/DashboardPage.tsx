@@ -452,11 +452,14 @@ export default function DashboardPage() {
             <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {TABS.map(tab => {
                 const active      = activeTab === tab.id
-                const comingSoon  = tab.id === 'cover-letters' || tab.id === 'jobs'
+                const comingSoon  = tab.id === 'cover-letters'
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => !comingSoon && setActiveTab(tab.id)}
+                    onClick={() => {
+                      if (tab.id === 'jobs') { navigate('/jobs'); return }
+                      if (!comingSoon) setActiveTab(tab.id)
+                    }}
                     className={[
                       'relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-colors',
                       active
@@ -634,19 +637,15 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* ── COVER LETTERS / JOBS TABS (coming soon) ── */}
-        {(activeTab === 'cover-letters' || activeTab === 'jobs') && (
+        {/* ── COVER LETTERS TAB (coming soon) ── */}
+        {activeTab === 'cover-letters' && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-gray-400" style={{ fontSize: '32px' }}>
-                {activeTab === 'cover-letters' ? 'mail' : 'work'}
-              </span>
+              <span className="material-symbols-outlined text-gray-400" style={{ fontSize: '32px' }}>mail</span>
             </div>
             <h2 className="text-[18px] font-bold text-on-background mb-2">Coming Soon</h2>
             <p className="text-[14px] text-on-surface-variant max-w-xs">
-              {activeTab === 'cover-letters'
-                ? 'AI-powered cover letters tailored to each job posting.'
-                : 'Track your job applications and get AI insights.'}
+              AI-powered cover letters tailored to each job posting.
             </p>
           </div>
         )}

@@ -3,151 +3,75 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/lib/firebase'
+import { searchJobs, relativeTime } from '@/lib/jobApi'
+import type { ApiJob } from '@/lib/jobApi'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+// Re-use ApiJob from jobApi; extend with UI-only fields
 
-interface Job {
-  id: string
-  title: string
-  company: string
-  initial: string
-  logoColor: string
-  location: string
-  remote: boolean
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship'
-  salary: string
-  posted: string
+type Job = ApiJob & {
+  initial:    string
+  logoColor:  string
   matchScore: number
-  description: string
-  skills: string[]
-  saved: boolean
+  posted:     string
+  saved:      boolean
 }
-
-// ── API helpers ───────────────────────────────────────────────────────────────
 
 const LOGO_COLORS = [
-  '#4285f4', '#635bff', '#ff5a5f', '#0082fb', '#e50914',
-  '#f24e1e', '#96bf48', '#1a1a2e', '#00b4d8', '#7209b7',
-  '#2ecc71', '#e67e22', '#e91e8c', '#34495e', '#16a085',
+  '#4285f4','#635bff','#ff5a5f','#0082fb','#e50914',
+  '#f24e1e','#96bf48','#1a1a2e','#00b4d8','#7209b7',
+  '#2ecc71','#e67e22','#e91e8c','#34495e','#16a085',
 ]
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ').trim()
-}
-
-function formatPosted(dateStr: string): string {
-  try {
-    const diff  = Date.now() - new Date(dateStr).getTime()
-    const hours = Math.floor(diff / 3_600_000)
-    const days  = Math.floor(diff / 86_400_000)
-    if (hours < 1)  return 'Just posted'
-    if (hours < 24) return `${hours}h ago`
-    if (days  < 7)  return `${days}d ago`
-    return `${Math.floor(days / 7)}w ago`
-  } catch { return 'Recently' }
-}
-
-function mapJobType(t: string): Job['type'] {
-  if (t === 'part_time')                   return 'Part-time'
-  if (t === 'contract' || t === 'freelance') return 'Contract'
-  if (t === 'internship')                  return 'Internship'
-  return 'Full-time'
-}
-
-async function fetchRemotiveJobs(keyword: string): Promise<Job[]> {
-  const params = new URLSearchParams({ limit: '25' })
-  if (keyword.trim()) params.set('search', keyword.trim())
-  const res  = await fetch(`https://remotive.com/api/remote-jobs?${params}`)
-  if (!res.ok) throw new Error(`Remotive ${res.status}`)
-  const data = await res.json()
-  return (data.jobs as any[]).map((job, i): Job => ({
-    id:          String(job.id),
-    title:       job.title,
-    company:     job.company_name,
-    initial:     (job.company_name as string)[0]?.toUpperCase() ?? '?',
-    logoColor:   LOGO_COLORS[i % LOGO_COLORS.length],
-    location:    job.candidate_required_location || 'Worldwide',
-    remote:      true,
-    type:        mapJobType(job.job_type),
-    salary:      job.salary?.trim() || 'Competitive',
-    posted:      formatPosted(job.publication_date),
-    matchScore:  65 + (job.id % 30),
-    description: stripHtml(job.description).slice(0, 220),
-    skills:      (job.tags as string[])?.slice(0, 4) ?? [],
-    saved:       false,
-  }))
+function toUiJob(api: ApiJob, index: number): Job {
+  return {
+    ...api,
+    initial:    api.company[0]?.toUpperCase() ?? '?',
+    logoColor:  LOGO_COLORS[index % LOGO_COLORS.length],
+    matchScore: 65 + (parseInt(api.id.replace(/\D/g, '').slice(-3) || '0', 10) % 30),
+    posted:     relativeTime(api.postedAt),
+    saved:      false,
+  }
 }
 
 // ── Fallback mock data (shown if API is unreachable) ──────────────────────────
 
 const ALL_JOBS: Job[] = [
   {
-    id: '1', title: 'Senior Software Engineer', company: 'Google',
-    initial: 'G', logoColor: '#4285f4', location: 'Mountain View, CA',
-    remote: true, type: 'Full-time', salary: '$180k – $240k', posted: '2d ago',
-    matchScore: 92, saved: false,
+    id: 'mock::1', title: 'Senior Software Engineer', company: 'Google',
+    initial: 'G', logoColor: '#4285f4', location: 'Mountain View, CA', country: 'US',
+    remote: true, type: 'full-time', salary: '$180k – $240k', salaryMin: 180000, salaryMax: 240000,
+    posted: '2d ago', postedAt: new Date(Date.now() - 2*86400000).toISOString(),
+    matchScore: 92, saved: false, source: 'other', applyUrl: '#',
     description: 'Join our infrastructure team to build highly scalable distributed systems that power Google services worldwide.',
-    skills: ['Go', 'Kubernetes', 'gRPC'],
+    tags: ['Go', 'Kubernetes', 'gRPC'],
   },
   {
-    id: '2', title: 'Product Manager, Growth', company: 'Stripe',
-    initial: 'S', logoColor: '#635bff', location: 'San Francisco, CA',
-    remote: false, type: 'Full-time', salary: '$160k – $210k', posted: '1d ago',
-    matchScore: 87, saved: true,
+    id: 'mock::2', title: 'Product Manager, Growth', company: 'Stripe',
+    initial: 'S', logoColor: '#635bff', location: 'San Francisco, CA', country: 'US',
+    remote: false, type: 'full-time', salary: '$160k – $210k', salaryMin: 160000, salaryMax: 210000,
+    posted: '1d ago', postedAt: new Date(Date.now() - 86400000).toISOString(),
+    matchScore: 87, saved: false, source: 'other', applyUrl: '#',
     description: 'Lead growth initiatives for Stripe\'s core payments product across enterprise and SMB segments.',
-    skills: ['Product Strategy', 'SQL', 'A/B Testing'],
+    tags: ['Product Strategy', 'SQL', 'A/B Testing'],
   },
   {
-    id: '3', title: 'Senior UX Designer', company: 'Airbnb',
-    initial: 'A', logoColor: '#ff5a5f', location: 'New York, NY',
-    remote: true, type: 'Full-time', salary: '$140k – $190k', posted: '3d ago',
-    matchScore: 81, saved: false,
-    description: 'Shape the future of travel by designing delightful experiences for millions of guests and hosts worldwide.',
-    skills: ['Figma', 'Design Systems', 'User Research'],
-  },
-  {
-    id: '4', title: 'Staff Engineer, Platform', company: 'Meta',
-    initial: 'M', logoColor: '#0082fb', location: 'Menlo Park, CA',
-    remote: false, type: 'Full-time', salary: '$220k – $300k', posted: '5h ago',
-    matchScore: 78, saved: false,
-    description: 'Build the next generation of developer platforms used by billions of people every day.',
-    skills: ['C++', 'Distributed Systems', 'Python'],
-  },
-  {
-    id: '5', title: 'Data Scientist', company: 'Netflix',
-    initial: 'N', logoColor: '#e50914', location: 'Los Gatos, CA',
-    remote: true, type: 'Full-time', salary: '$150k – $200k', posted: '1d ago',
-    matchScore: 85, saved: true,
-    description: 'Use data to personalise content recommendations for 260M+ subscribers and optimise our streaming platform.',
-    skills: ['Python', 'ML', 'Spark', 'SQL'],
-  },
-  {
-    id: '6', title: 'Frontend Engineer', company: 'Figma',
-    initial: 'F', logoColor: '#f24e1e', location: 'Remote',
-    remote: true, type: 'Full-time', salary: '$130k – $175k', posted: '2d ago',
-    matchScore: 90, saved: false,
+    id: 'mock::3', title: 'Frontend Engineer', company: 'Figma',
+    initial: 'F', logoColor: '#f24e1e', location: 'Remote', country: 'US',
+    remote: true, type: 'full-time', salary: '$130k – $175k', salaryMin: 130000, salaryMax: 175000,
+    posted: '2d ago', postedAt: new Date(Date.now() - 2*86400000).toISOString(),
+    matchScore: 90, saved: false, source: 'other', applyUrl: '#',
     description: 'Work on the design tool used by over 4 million designers. Ship features that make creativity faster.',
-    skills: ['React', 'TypeScript', 'WebGL'],
+    tags: ['React', 'TypeScript', 'WebGL'],
   },
   {
-    id: '7', title: 'DevOps Engineer', company: 'Shopify',
-    initial: 'S', logoColor: '#96bf48', location: 'Toronto, Canada',
-    remote: true, type: 'Contract', salary: '$110k – $150k', posted: '4d ago',
-    matchScore: 74, saved: false,
+    id: 'mock::4', title: 'DevOps Engineer', company: 'Shopify',
+    initial: 'S', logoColor: '#96bf48', location: 'Toronto, Canada', country: 'CA',
+    remote: true, type: 'contract', salary: '$110k – $150k', salaryMin: 110000, salaryMax: 150000,
+    posted: '4d ago', postedAt: new Date(Date.now() - 4*86400000).toISOString(),
+    matchScore: 74, saved: false, source: 'other', applyUrl: '#',
     description: 'Support Shopify\'s global commerce infrastructure serving millions of merchants worldwide.',
-    skills: ['Terraform', 'AWS', 'Docker'],
-  },
-  {
-    id: '8', title: 'Engineering Manager', company: 'Notion',
-    initial: 'N', logoColor: '#000000', location: 'San Francisco, CA',
-    remote: false, type: 'Full-time', salary: '$200k – $260k', posted: '6h ago',
-    matchScore: 69, saved: false,
-    description: 'Lead a team of 6–8 engineers building Notion\'s collaborative editing engine.',
-    skills: ['Leadership', 'TypeScript', 'System Design'],
+    tags: ['Terraform', 'AWS', 'Docker'],
   },
 ]
 
@@ -529,7 +453,7 @@ function JobCard({ job, onSave, onGenerate }: {
               className="text-[11px] font-bold px-2.5 py-1 rounded-full"
               style={{ background: '#dbe1ff', color: '#003fb1' }}
             >
-              {job.type}
+              {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
             </span>
 
             {/* Salary */}
@@ -541,12 +465,12 @@ function JobCard({ job, onSave, onGenerate }: {
             </span>
 
             {/* Skills */}
-            {job.skills.slice(0, 3).map(skill => (
+            {(job.tags ?? []).slice(0, 3).map(tag => (
               <span
-                key={skill}
+                key={tag}
                 className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant"
               >
-                {skill}
+                {tag}
               </span>
             ))}
 
@@ -622,10 +546,10 @@ export default function JobSearchPage() {
   const [loading,    setLoading]    = useState(true)
   const [searched,   setSearched]   = useState(false)
 
-  // Initial load — fetch real jobs with no keyword
+  // Initial load
   useEffect(() => {
-    fetchRemotiveJobs('')
-      .then(setJobs)
+    searchJobs({ limit: 25 })
+      .then(r => setJobs(r.jobs.map(toUiJob)))
       .catch(() => setJobs(ALL_JOBS))
       .finally(() => setLoading(false))
   }, [])
@@ -635,35 +559,22 @@ export default function JobSearchPage() {
     setLoading(true)
     setJobs([])
     try {
-      const results = await fetchRemotiveJobs(keyword)
+      const typeParam = jobType === 'All Types' ? undefined
+        : jobType === 'Remote'     ? undefined
+        : jobType === 'Full-time'  ? 'full-time'
+        : jobType === 'Part-time'  ? 'part-time'
+        : jobType === 'Contract'   ? 'contract'
+        : jobType === 'Internship' ? 'internship'
+        : undefined
 
-      let filtered = results
-
-      // Client-side location filter (Remotive returns remote jobs with location requirements)
-      if (location.trim()) {
-        const loc = location.toLowerCase()
-        const locFiltered = results.filter(j => {
-          const jLoc = j.location.toLowerCase()
-          return (
-            jLoc.includes(loc) ||
-            jLoc.includes('worldwide') ||
-            jLoc.includes('anywhere') ||
-            jLoc === 'remote' ||
-            loc.includes('remote')
-          )
-        })
-        if (locFiltered.length > 0) filtered = locFiltered
-      }
-
-      // Client-side job type filter
-      if (jobType !== 'All Types') {
-        const typeFiltered = filtered.filter(j =>
-          jobType === 'Remote' ? j.remote : j.type === jobType
-        )
-        if (typeFiltered.length > 0) filtered = typeFiltered
-      }
-
-      setJobs(filtered)
+      const res = await searchJobs({
+        q:        keyword,
+        location,
+        remote:   jobType === 'Remote' || undefined,
+        type:     typeParam,
+        limit:    30,
+      })
+      setJobs(res.jobs.map(toUiJob))
     } catch {
       setJobs(ALL_JOBS)
     } finally {
@@ -803,7 +714,10 @@ export default function JobSearchPage() {
                   setLocation('')
                   setJobType('All Types')
                   setLoading(true)
-                  fetchRemotiveJobs('').then(setJobs).catch(() => setJobs(ALL_JOBS)).finally(() => setLoading(false))
+                  searchJobs({ limit: 25 })
+                    .then(r => setJobs(r.jobs.map(toUiJob)))
+                    .catch(() => setJobs(ALL_JOBS))
+                    .finally(() => setLoading(false))
                 }}
                 className="px-5 py-2 rounded-xl font-body-sm font-bold text-primary bg-primary/10 hover:bg-primary/15 transition-colors"
               >

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: applyai-job-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000          # Render assigns this automatically
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://applyai-dab34.web.app
+      - key: CACHE_TTL_SECONDS
+        value: 300
+      # Add these in Render dashboard → Environment (keep secret):
+      # ADZUNA_APP_ID
+      # ADZUNA_APP_KEY
+      # JSEARCH_API_KEY
+    healthCheckPath: /health

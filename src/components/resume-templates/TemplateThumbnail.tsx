@@ -54,7 +54,6 @@ const COMPONENTS: Record<TemplateId, React.ComponentType<{ data: typeof SAMPLE_R
   'dark-elegant':         DarkElegant,
 }
 
-// ── Error boundary so a crashed template never whites out the page ──────────
 class ThumbnailErrorBoundary extends Component<
   { children: ReactNode; label: string },
   { error: boolean }
@@ -83,30 +82,36 @@ class ThumbnailErrorBoundary extends Component<
 interface Props {
   templateId: TemplateId
   accentColor?: AccentColor
+  // Pass true when the thumbnail is already visible (e.g. inside an open modal)
+  // so it skips the IntersectionObserver and renders immediately.
+  eager?: boolean
 }
 
-export default function TemplateThumbnail({ templateId, accentColor = 'primary' }: Props) {
+export default function TemplateThumbnail({ templateId, accentColor = 'primary', eager = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  // Start at 0; useLayoutEffect measures and sets the real scale before
-  // the browser paints, so the thumbnail is always the correct size on
-  // first render — no flash, no collapsed-height issue.
-  const [scale, setScale] = useState(0.3)
+  const [scale,     setScale]     = useState(0.3)
+  const [visible,   setVisible]   = useState(eager)
+
+  // Lazy-render: only mount the template component once the card scrolls
+  // near the viewport. Once visible it stays rendered (observer disconnects).
+  useEffect(() => {
+    if (eager) return
+    const el = containerRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); io.disconnect() } },
+      { rootMargin: '300px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [eager])
 
   useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
-
-    const update = (width: number) => {
-      if (width > 0) setScale(width / 794)
-    }
-
-    // Synchronous measurement — getBoundingClientRect forces a layout
-    // computation so we always get the real grid/flex column width.
+    const update = (w: number) => { if (w > 0) setScale(w / 794) }
     update(el.getBoundingClientRect().width)
-
-    const ro = new ResizeObserver(([entry]) => {
-      update(entry.contentRect.width)
-    })
+    const ro = new ResizeObserver(([e]) => update(e.contentRect.width))
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -127,9 +132,10 @@ export default function TemplateThumbnail({ templateId, accentColor = 'primary' 
         overflow: 'hidden',
         position: 'relative',
         height:   `${scaledH}px`,
+        background: !visible ? '#f1f5f9' : undefined,
       }}
     >
-      {Component && (
+      {visible && Component && (
         <ThumbnailErrorBoundary label={templateId}>
           <div
             style={{

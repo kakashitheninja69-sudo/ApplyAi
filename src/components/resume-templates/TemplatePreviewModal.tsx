@@ -83,7 +83,7 @@ export default function TemplatePreviewModal({ template, initialAccent, onClose 
         <div className="hidden sm:block w-72 xl:w-80 shrink-0 bg-gray-50 relative overflow-y-auto">
           {/* Accent top strip */}
           <div style={{ height: '3px', background: hex, position: 'sticky', top: 0, zIndex: 1 }} />
-          <TemplateThumbnail templateId={template.id} accentColor={accent} />
+          <TemplateThumbnail templateId={template.id} accentColor={accent} eager />
         </div>
 
         {/* Right: info */}

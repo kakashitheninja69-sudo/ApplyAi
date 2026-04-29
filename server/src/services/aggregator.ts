@@ -1,53 +1,84 @@
 import type { NormalizedJob, SearchParams, JobSource } from '../types/job'
-import { fetchRemotive } from './remotive'
-import { fetchAdzuna   } from './adzuna'
-import { fetchJSearch  } from './jsearch'
-import { deduplicate   } from '../utils/deduplicate'
+
+// ── API sources ───────────────────────────────────────────────────────────────
+import { fetchRemotive       } from './remotive'
+import { fetchAdzuna         } from './adzuna'
+import { fetchJSearch        } from './jsearch'
+import { fetchRemoteOK       } from './remoteok'
+import { fetchArbeitnow      } from './arbeitnow'
+import { fetchWorkingNomads  } from './workingnomads'
+import { fetchTheMuse        } from './themuse'
+import { fetchReed           } from './reed'
+
+// ── Crawlers ──────────────────────────────────────────────────────────────────
+import { crawlAllRssFeeds    } from '../crawler/rss'
+import { crawlGreenhouse     } from '../crawler/greenhouse'
+import { crawlLever          } from '../crawler/lever'
+
+// ── Post-processing ───────────────────────────────────────────────────────────
+import { deduplicate         } from '../utils/deduplicate'
 import { rankJobs, applyDateFilter, applySalaryFilter } from '../utils/rank'
 
 export interface AggregateResult {
-  jobs:        NormalizedJob[]
-  sources:     JobSource[]
-  errors:      Record<string, string>
-  totalRaw:    number
+  jobs:     NormalizedJob[]
+  sources:  JobSource[]
+  errors:   Record<string, string>
+  totalRaw: number
 }
 
 export async function aggregateJobs(params: SearchParams): Promise<AggregateResult> {
-  // ── 1. Fetch all sources in parallel ────────────────────────────────────────
-  const [remotiveResult, adzunaResult, jsearchResult] = await Promise.all([
+  // ── Group 1: Fast API sources — always run (free, no auth) ───────────────
+  const fastSources = Promise.all([
     fetchRemotive(params),
-    fetchAdzuna(params),
-    fetchJSearch(params),
+    fetchRemoteOK(params),
+    fetchArbeitnow(params),
+    fetchWorkingNomads(params),
+    fetchTheMuse(params),
   ])
 
-  const results    = [remotiveResult, adzunaResult, jsearchResult]
-  const allJobs    = results.flatMap(r => r.jobs)
-  const sources    = results.filter(r => r.jobs.length > 0).map(r => r.source)
-  const errors     = Object.fromEntries(
-    results.filter(r => r.error).map(r => [r.source, r.error!])
-  )
-  const totalRaw   = allJobs.length
+  // ── Group 2: Authenticated APIs — run if keys are set ────────────────────
+  const authSources = Promise.all([
+    fetchAdzuna(params),
+    fetchJSearch(params),
+    fetchReed(params),
+  ])
 
-  // ── 2. Apply filters ─────────────────────────────────────────────────────────
+  // ── Group 3: Crawlers — run in parallel with API sources ─────────────────
+  // Greenhouse & Lever: public, no auth. RSS: public feeds.
+  const crawlerSources = Promise.all([
+    crawlGreenhouse(params),
+    crawlLever(params),
+    crawlAllRssFeeds(params.q),
+  ])
+
+  // Run all three groups in parallel
+  const [fastResults, authResults, crawlerResults] = await Promise.all([
+    fastSources,
+    authSources,
+    crawlerSources,
+  ])
+
+  const allResults  = [...fastResults, ...authResults, ...crawlerResults]
+  const allJobs     = allResults.flatMap(r => r.jobs)
+  const sources     = allResults.filter(r => r.jobs.length > 0).map(r => r.source)
+  const errors      = Object.fromEntries(
+    allResults.filter(r => r.error).map(r => [r.source, r.error!])
+  )
+  const totalRaw    = allJobs.length
+
+  // ── 2. Filters ────────────────────────────────────────────────────────────
   let filtered = applyDateFilter(allJobs, params.datePosted)
   filtered     = applySalaryFilter(filtered, params.salaryMin, params.salaryMax)
 
-  if (params.remote) {
-    filtered = filtered.filter(j => j.remote)
-  }
-
+  if (params.remote) filtered = filtered.filter(j => j.remote)
   if (params.type && params.type !== 'all') {
     filtered = filtered.filter(j => j.type === params.type)
   }
 
-  // Location post-filter: if user specified a location, prefer jobs that
-  // mention it. Don't hard-exclude (APIs already filter server-side).
-  // But weight by location relevance during ranking is fine.
-
-  // ── 3. Deduplicate ───────────────────────────────────────────────────────────
+  // ── 3. Deduplicate ────────────────────────────────────────────────────────
   const deduped = deduplicate(filtered)
 
-  // ── 4. Smart ranking ─────────────────────────────────────────────────────────
+  // ── 4. Smart ranking ──────────────────────────────────────────────────────
   const ranked = rankJobs(deduped, params)
 
   return { jobs: ranked, sources, errors, totalRaw }

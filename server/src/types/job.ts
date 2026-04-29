@@ -1,5 +1,8 @@
 export type JobType = 'full-time' | 'part-time' | 'contract' | 'remote' | 'internship'
-export type JobSource = 'adzuna' | 'jsearch' | 'remotive' | 'other'
+export type JobSource =
+  | 'adzuna' | 'jsearch' | 'remotive'
+  | 'remoteok' | 'arbeitnow' | 'workingnomads' | 'themuse' | 'reed'
+  | 'greenhouse' | 'lever' | 'rss' | 'other'
 export type DateFilter = '24h' | '7d' | '30d' | 'any'
 
 export interface NormalizedJob {

@@ -46,8 +46,13 @@ function completeness(job: NormalizedJob): number {
   if (job.description.length > 100) s += 1
   if (job.tags.length > 2)      s += 2
   if (job.applyUrl && !job.applyUrl.includes('adzuna.com/land')) s += 1
-  // Source quality preference
-  const srcScore = { adzuna: 3, jsearch: 2, remotive: 1, other: 0 } as const
+  // Source quality preference (higher = prefer this copy when deduplicating)
+  const srcScore: Record<string, number> = {
+    adzuna: 3, jsearch: 2, reed: 2,
+    greenhouse: 2, lever: 2,
+    remotive: 1, remoteok: 1, arbeitnow: 1,
+    workingnomads: 1, themuse: 1, rss: 0, other: 0,
+  }
   s += srcScore[job.source] ?? 0
   return s
 }

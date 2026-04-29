@@ -81,12 +81,24 @@ router.get('/', async (req: Request, res: Response) => {
 })
 
 // GET /jobs/health — quick source status
-router.get('/health', async (_req: Request, res: Response) => {
+router.get('/health', (_req: Request, res: Response) => {
+  const ok  = 'on (no key)'
+  const cfg = (k: string) => process.env[k] ? '✓ configured' : `✗ missing ${k}`
   res.json({
     sources: {
-      remotive: 'always on (no key required)',
-      adzuna:   process.env.ADZUNA_APP_ID  ? 'configured' : 'missing ADZUNA_APP_ID / ADZUNA_APP_KEY',
-      jsearch:  process.env.JSEARCH_API_KEY ? 'configured' : 'missing JSEARCH_API_KEY',
+      // Always-on (no key needed)
+      remotive:      ok,
+      remoteok:      ok,
+      arbeitnow:     ok,
+      workingnomads: ok,
+      themuse:       ok,
+      greenhouse:    'on (public API)',
+      lever:         'on (public API)',
+      rss_feeds:     'on (We Work Remotely, Jobicy, …)',
+      // Require keys
+      adzuna:  cfg('ADZUNA_APP_ID'),
+      jsearch: cfg('JSEARCH_API_KEY'),
+      reed:    cfg('REED_API_KEY'),
     },
   })
 })

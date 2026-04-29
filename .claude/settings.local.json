@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(git push *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add *)",
+      "Bash(gh run *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('./node_modules/firebase/package.json'\\); console.log\\('firebase ok'\\)\")",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)",
+      "Bash(npx firebase *)",
+      "Bash(git restore *)"
+    ]
+  }
+}

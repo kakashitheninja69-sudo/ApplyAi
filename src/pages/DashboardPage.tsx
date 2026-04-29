@@ -434,10 +434,19 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between h-14 gap-4">
 
-            {/* Logo */}
-            <button onClick={() => navigate('/')} className="flex items-center gap-2 shrink-0">
-              <span className="text-[18px] font-bold text-primary tracking-tight">ApplyAI</span>
-            </button>
+            {/* Back + Logo */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => navigate(-1)}
+                title="Go back"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+              </button>
+              <button onClick={() => navigate('/')} className="flex items-center gap-2">
+                <span className="text-[18px] font-bold text-primary tracking-tight">ApplyAI</span>
+              </button>
+            </div>
 
             {/* Tab nav (desktop) */}
             <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">

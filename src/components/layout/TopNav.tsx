@@ -55,12 +55,21 @@ export default function TopNav({ variant = 'default' }: TopNavProps) {
       <div className="flex justify-between items-center px-8 h-16 w-full max-w-[1920px] mx-auto">
         {/* Brand + Nav */}
         <div className="flex items-center gap-10">
-          <button
-            onClick={handleLogoClick}
-            className="text-xl font-h1 font-bold tracking-tight text-primary hover:opacity-80 transition-opacity"
-          >
-            ApplyAI
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigate(-1)}
+              title="Go back"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+            </button>
+            <button
+              onClick={handleLogoClick}
+              className="text-xl font-h1 font-bold tracking-tight text-primary hover:opacity-80 transition-opacity"
+            >
+              ApplyAI
+            </button>
+          </div>
 
           <nav className="hidden md:flex items-center gap-1">
             {(['home', 'templates', 'about', 'pricing'] as const).map((link) => {

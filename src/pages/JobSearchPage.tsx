@@ -23,7 +23,66 @@ interface Job {
   saved: boolean
 }
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
+// ── API helpers ───────────────────────────────────────────────────────────────
+
+const LOGO_COLORS = [
+  '#4285f4', '#635bff', '#ff5a5f', '#0082fb', '#e50914',
+  '#f24e1e', '#96bf48', '#1a1a2e', '#00b4d8', '#7209b7',
+  '#2ecc71', '#e67e22', '#e91e8c', '#34495e', '#16a085',
+]
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ').trim()
+}
+
+function formatPosted(dateStr: string): string {
+  try {
+    const diff  = Date.now() - new Date(dateStr).getTime()
+    const hours = Math.floor(diff / 3_600_000)
+    const days  = Math.floor(diff / 86_400_000)
+    if (hours < 1)  return 'Just posted'
+    if (hours < 24) return `${hours}h ago`
+    if (days  < 7)  return `${days}d ago`
+    return `${Math.floor(days / 7)}w ago`
+  } catch { return 'Recently' }
+}
+
+function mapJobType(t: string): Job['type'] {
+  if (t === 'part_time')                   return 'Part-time'
+  if (t === 'contract' || t === 'freelance') return 'Contract'
+  if (t === 'internship')                  return 'Internship'
+  return 'Full-time'
+}
+
+async function fetchRemotiveJobs(keyword: string): Promise<Job[]> {
+  const params = new URLSearchParams({ limit: '25' })
+  if (keyword.trim()) params.set('search', keyword.trim())
+  const res  = await fetch(`https://remotive.com/api/remote-jobs?${params}`)
+  if (!res.ok) throw new Error(`Remotive ${res.status}`)
+  const data = await res.json()
+  return (data.jobs as any[]).map((job, i): Job => ({
+    id:          String(job.id),
+    title:       job.title,
+    company:     job.company_name,
+    initial:     (job.company_name as string)[0]?.toUpperCase() ?? '?',
+    logoColor:   LOGO_COLORS[i % LOGO_COLORS.length],
+    location:    job.candidate_required_location || 'Worldwide',
+    remote:      true,
+    type:        mapJobType(job.job_type),
+    salary:      job.salary?.trim() || 'Competitive',
+    posted:      formatPosted(job.publication_date),
+    matchScore:  65 + (job.id % 30),
+    description: stripHtml(job.description).slice(0, 220),
+    skills:      (job.tags as string[])?.slice(0, 4) ?? [],
+    saved:       false,
+  }))
+}
+
+// ── Fallback mock data (shown if API is unreachable) ──────────────────────────
 
 const ALL_JOBS: Job[] = [
   {
@@ -559,37 +618,57 @@ export default function JobSearchPage() {
   const [distance,   setDistance]   = useState('Any distance')
   const [timePosted, setTimePosted] = useState('Any time')
   const [locating,   setLocating]   = useState(false)
-  const [jobs,       setJobs]       = useState<Job[]>(ALL_JOBS)
+  const [jobs,       setJobs]       = useState<Job[]>([])
+  const [loading,    setLoading]    = useState(true)
   const [searched,   setSearched]   = useState(false)
 
-  function handleSearch() {
+  // Initial load — fetch real jobs with no keyword
+  useEffect(() => {
+    fetchRemotiveJobs('')
+      .then(setJobs)
+      .catch(() => setJobs(ALL_JOBS))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function handleSearch() {
     setSearched(true)
-    let results = ALL_JOBS
+    setLoading(true)
+    setJobs([])
+    try {
+      const results = await fetchRemotiveJobs(keyword)
 
-    if (keyword.trim()) {
-      const kw = keyword.toLowerCase()
-      results = results.filter(j =>
-        j.title.toLowerCase().includes(kw) ||
-        j.company.toLowerCase().includes(kw) ||
-        j.skills.some(s => s.toLowerCase().includes(kw))
-      )
+      let filtered = results
+
+      // Client-side location filter (Remotive returns remote jobs with location requirements)
+      if (location.trim()) {
+        const loc = location.toLowerCase()
+        const locFiltered = results.filter(j => {
+          const jLoc = j.location.toLowerCase()
+          return (
+            jLoc.includes(loc) ||
+            jLoc.includes('worldwide') ||
+            jLoc.includes('anywhere') ||
+            jLoc === 'remote' ||
+            loc.includes('remote')
+          )
+        })
+        if (locFiltered.length > 0) filtered = locFiltered
+      }
+
+      // Client-side job type filter
+      if (jobType !== 'All Types') {
+        const typeFiltered = filtered.filter(j =>
+          jobType === 'Remote' ? j.remote : j.type === jobType
+        )
+        if (typeFiltered.length > 0) filtered = typeFiltered
+      }
+
+      setJobs(filtered)
+    } catch {
+      setJobs(ALL_JOBS)
+    } finally {
+      setLoading(false)
     }
-
-    if (location.trim()) {
-      const loc = location.toLowerCase()
-      results = results.filter(j =>
-        j.location.toLowerCase().includes(loc) ||
-        (loc.includes('remote') && j.remote)
-      )
-    }
-
-    if (jobType !== 'All Types') {
-      results = jobType === 'Remote'
-        ? results.filter(j => j.remote)
-        : results.filter(j => j.type === jobType)
-    }
-
-    setJobs(results)
   }
 
   function handleGeolocate() {
@@ -644,7 +723,7 @@ export default function JobSearchPage() {
             </div>
             <h1 className="font-h1 text-h1 text-on-background">Find your next role</h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              {searched ? `${jobs.length} job${jobs.length !== 1 ? 's' : ''} found` : `${ALL_JOBS.length} curated jobs ready for you`}
+              {loading ? 'Searching…' : searched ? `${jobs.length} job${jobs.length !== 1 ? 's' : ''} found` : `${jobs.length} remote jobs available`}
             </p>
           </div>
 
@@ -667,7 +746,7 @@ export default function JobSearchPage() {
                 {searched ? 'Search Results' : 'Recommended for you'}
               </h2>
               <p className="font-body-sm text-[13px] text-on-surface-variant">
-                Showing {jobs.length} job{jobs.length !== 1 ? 's' : ''}
+                {loading ? 'Loading…' : `Showing ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -681,7 +760,23 @@ export default function JobSearchPage() {
           </div>
 
           {/* Job listings */}
-          {jobs.length > 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-2xl border border-outline-variant p-5 animate-pulse">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-200 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-48" />
+                      <div className="h-3 bg-gray-100 rounded w-32" />
+                      <div className="h-3 bg-gray-100 rounded w-full mt-3" />
+                      <div className="h-3 bg-gray-100 rounded w-3/4" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : jobs.length > 0 ? (
             <div className="space-y-4">
               {jobs.map(job => (
                 <JobCard
@@ -702,7 +797,14 @@ export default function JobSearchPage() {
                 Try different keywords or broaden your filters.
               </p>
               <button
-                onClick={() => { setJobs(ALL_JOBS); setSearched(false); setKeyword(''); setLocation(''); setJobType('All Types') }}
+                onClick={() => {
+                  setSearched(false)
+                  setKeyword('')
+                  setLocation('')
+                  setJobType('All Types')
+                  setLoading(true)
+                  fetchRemotiveJobs('').then(setJobs).catch(() => setJobs(ALL_JOBS)).finally(() => setLoading(false))
+                }}
                 className="px-5 py-2 rounded-xl font-body-sm font-bold text-primary bg-primary/10 hover:bg-primary/15 transition-colors"
               >
                 Clear filters

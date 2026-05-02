@@ -64,11 +64,6 @@ function formatPostedAt(dateStr: string): string {
   } catch { return 'Recently' }
 }
 
-const LOGO_COLORS = [
-  '#4285f4','#635bff','#ff5a5f','#0082fb','#e50914',
-  '#f24e1e','#96bf48','#1a1a2e','#00b4d8','#7209b7',
-]
-
 async function fetchFromRemotive(keyword: string, limit = 25): Promise<JobsResponse> {
   const qs = new URLSearchParams({ limit: String(limit) })
   if (keyword.trim()) qs.set('search', keyword.trim())
@@ -78,7 +73,7 @@ async function fetchFromRemotive(keyword: string, limit = 25): Promise<JobsRespo
   if (!res.ok) throw new Error(`Remotive ${res.status}`)
   const data = await res.json() as { jobs: any[] }
 
-  const jobs: ApiJob[] = data.jobs.map((j, i): ApiJob => ({
+  const jobs: ApiJob[] = data.jobs.map((j): ApiJob => ({
     id:          `remotive::${j.id}`,
     title:       j.title,
     company:     j.company_name,
@@ -124,8 +119,26 @@ export interface SearchOptions {
   limit?:      number
 }
 
+// Score a job against a keyword — higher = more relevant
+function relevanceScore(job: ApiJob, q: string): number {
+  if (!q.trim()) return 0
+  const kw    = q.toLowerCase()
+  const words = kw.split(/\s+/).filter(Boolean)
+  const title = job.title.toLowerCase()
+  const tags  = job.tags.join(' ').toLowerCase()
+  const desc  = job.description.toLowerCase()
+  let score   = 0
+  for (const w of words) {
+    if (title.includes(w)) score += 10   // title match is strongest signal
+    if (tags.includes(w))  score += 4
+    if (desc.includes(w))  score += 1
+  }
+  if (title.includes(kw)) score += 15   // bonus: exact phrase in title
+  return score
+}
+
 export async function searchJobs(opts: SearchOptions): Promise<JobsResponse> {
-  // If a backend URL is configured, use it
+  // Backend path — handles all filtering + ranking server-side
   if (BACKEND_URL) {
     const params: Record<string, string> = {}
     if (opts.q)          params.q          = opts.q
@@ -141,12 +154,23 @@ export async function searchJobs(opts: SearchOptions): Promise<JobsResponse> {
     return fetchFromBackend(params)
   }
 
-  // No backend → hit Remotive directly
+  // Fallback: Remotive direct
   const result = await fetchFromRemotive(opts.q ?? '', opts.limit ?? 25)
+  const kw = (opts.q ?? '').trim()
 
-  // Client-side location filter
+  // Strict relevance filter: drop jobs with zero title/tag/desc match
+  if (kw) {
+    const scored = result.jobs
+      .map(j => ({ j, s: relevanceScore(j, kw) }))
+      .filter(({ s }) => s > 0)
+      .sort((a, b) => b.s - a.s)
+
+    result.jobs = scored.map(({ j }) => j)
+  }
+
+  // Location filter
   if (opts.location?.trim()) {
-    const loc = opts.location.toLowerCase()
+    const loc      = opts.location.toLowerCase()
     const filtered = result.jobs.filter(j => {
       const jl = j.location.toLowerCase()
       return jl.includes(loc) || jl.includes('worldwide') || jl.includes('anywhere') || loc.includes('remote')
@@ -154,6 +178,7 @@ export async function searchJobs(opts: SearchOptions): Promise<JobsResponse> {
     if (filtered.length > 0) result.jobs = filtered
   }
 
+  result.total = result.jobs.length
   return result
 }
 

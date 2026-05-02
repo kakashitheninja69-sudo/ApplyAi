@@ -137,14 +137,13 @@ export default function BuilderPage() {
         {/* Actions — fixed right */}
         <div className="flex items-center gap-2 px-4 shrink-0">
           {/* Save Version */}
-          {currentUser && resumeId && (
+          {resumeId && (
             <button
-              onClick={async () => {
+              onClick={() => {
                 setIsSaving(true)
-                try {
-                  saveVersion(resumeId, data,
-                    new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))
-                } finally { setIsSaving(false) }
+                saveVersion(resumeId, data,
+                  new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))
+                setIsSaving(false)
               }}
               className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all border border-gray-200"
               title="Save a named version you can restore later"

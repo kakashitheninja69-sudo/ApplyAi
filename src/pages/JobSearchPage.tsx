@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/lib/firebase'
-import { searchJobs, relativeTime } from '@/lib/jobApi'
+import { searchJobs, relativeTime, stripHtml } from '@/lib/jobApi'
 import type { ApiJob } from '@/lib/jobApi'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ const LOGO_COLORS = [
 function toUiJob(api: ApiJob, index: number): Job {
   return {
     ...api,
+    description: stripHtml(api.description).slice(0, 220),
     initial:    api.company[0]?.toUpperCase() ?? '?',
     logoColor:  LOGO_COLORS[index % LOGO_COLORS.length],
     matchScore: 65 + (parseInt(api.id.replace(/\D/g, '').slice(-3) || '0', 10) % 30),
@@ -389,12 +390,18 @@ function AiPersonalizationCard({ job, onGenerate }: { job: Job; onGenerate: () =
 function JobCard({ job, onSave, onGenerate }: {
   job: Job; onSave: () => void; onGenerate: () => void
 }) {
+  const canOpen = job.applyUrl && job.applyUrl !== '#'
+  function openJob() {
+    if (canOpen) window.open(job.applyUrl, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-outline-variant p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group">
       <div className="flex items-start gap-4">
         {/* Company logo */}
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm"
+          onClick={openJob}
+          className={cn('w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm', canOpen && 'cursor-pointer')}
           style={{ background: job.logoColor }}
         >
           {job.initial}
@@ -404,7 +411,10 @@ function JobCard({ job, onSave, onGenerate }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-h2 text-[15px] font-bold text-on-background group-hover:text-primary transition-colors cursor-pointer">
+              <h3
+                onClick={openJob}
+                className={cn('font-h2 text-[15px] font-bold text-on-background group-hover:text-primary transition-colors', canOpen && 'cursor-pointer hover:underline')}
+              >
                 {job.title}
               </h3>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -457,12 +467,14 @@ function JobCard({ job, onSave, onGenerate }: {
             </span>
 
             {/* Salary */}
-            <span
-              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={{ background: '#dcfce7', color: '#15803d' }}
-            >
-              {job.salary}
-            </span>
+            {job.salary && (
+              <span
+                className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                style={{ background: '#dcfce7', color: '#15803d' }}
+              >
+                {job.salary}
+              </span>
+            )}
 
             {/* Skills */}
             {(job.tags ?? []).slice(0, 3).map(tag => (
@@ -474,8 +486,20 @@ function JobCard({ job, onSave, onGenerate }: {
               </span>
             ))}
 
-            {/* Posted */}
-            <span className="text-[11px] text-on-surface-variant ml-auto">{job.posted}</span>
+            {/* Posted + Apply */}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[11px] text-on-surface-variant">{job.posted}</span>
+              {canOpen && (
+                <button
+                  onClick={openJob}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.96]"
+                  style={{ background: 'linear-gradient(135deg, #003fb1 0%, #1a56db 100%)' }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>open_in_new</span>
+                  Apply
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

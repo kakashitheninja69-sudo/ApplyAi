@@ -8,6 +8,7 @@ import type { ApiJob } from '@/lib/jobApi'
 import { loadAllResumes, loadResume } from '@/lib/localResumes'
 import { getSavedJobs, saveJob, unsaveJob, isJobSaved } from '@/lib/savedJobs'
 import AppDrawer from '@/components/layout/AppDrawer'
+import GenerateModal from '@/components/GenerateModal'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -381,36 +382,15 @@ function FilterSelect({ label, options, value, onChange }: {
   )
 }
 
-function AiPersonalizationCard({ job, hasResume, onGenerate }: {
-  job: Job; hasResume: boolean; onGenerate: () => void
-}) {
-  const navigate = useNavigate()
-  const [doc, setDoc] = useState('Resume')
+type DocMode = 'Resume' | 'Cover Letter' | 'Both'
 
-  if (!hasResume) {
-    return (
-      <div
-        className="mt-4 rounded-2xl p-4 flex items-center gap-3 flex-wrap"
-        style={{ background: 'linear-gradient(135deg, #eef4ff 0%, #e8eeff 100%)', border: '1px solid #c7d7f7' }}
-      >
-        <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>description</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-body-sm font-bold text-primary text-[13px]">Add a resume to see your match score</p>
-          <p className="text-[11px] text-on-surface-variant mt-0.5">Create your resume to personalise documents for this job</p>
-        </div>
-        <button
-          onClick={() => navigate('/builder')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.96] shrink-0"
-          style={{ background: 'linear-gradient(135deg, #003fb1 0%, #1a56db 100%)', boxShadow: '0 3px 10px rgba(0,63,177,0.25)' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
-          Build Resume
-        </button>
-      </div>
-    )
-  }
+function AiPersonalizationCard({ job, hasResume, onGenerate }: {
+  job: Job; hasResume: boolean; onGenerate: (mode: DocMode) => void
+}) {
+  const [doc, setDoc] = useState<DocMode>('Resume')
+
+  // Only show when user has a resume with a real match
+  if (!hasResume || job.matchScore === 0) return null
 
   return (
     <div
@@ -434,13 +414,13 @@ function AiPersonalizationCard({ job, hasResume, onGenerate }: {
       <div className="flex items-center gap-2 shrink-0">
         <select
           value={doc}
-          onChange={e => setDoc(e.target.value)}
+          onChange={e => setDoc(e.target.value as DocMode)}
           className="appearance-none pl-3 pr-7 py-2 rounded-xl text-[12px] font-semibold bg-white border border-primary/20 text-primary outline-none cursor-pointer"
         >
-          {['Resume', 'Cover Letter', 'Both'].map(d => <option key={d}>{d}</option>)}
+          {(['Resume', 'Cover Letter', 'Both'] as DocMode[]).map(d => <option key={d}>{d}</option>)}
         </select>
         <button
-          onClick={onGenerate}
+          onClick={() => onGenerate(doc)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.96]"
           style={{ background: 'linear-gradient(135deg, #003fb1 0%, #1a56db 100%)', boxShadow: '0 3px 10px rgba(0,63,177,0.25)' }}
         >
@@ -453,7 +433,7 @@ function AiPersonalizationCard({ job, hasResume, onGenerate }: {
 }
 
 function JobCard({ job, hasResume, onSave, onGenerate }: {
-  job: Job; hasResume: boolean; onSave: () => void; onGenerate: () => void
+  job: Job; hasResume: boolean; onSave: () => void; onGenerate: (mode: DocMode) => void
 }) {
   const canOpen = job.applyUrl && job.applyUrl !== '#'
   function openJob() {
@@ -621,6 +601,8 @@ export default function JobSearchPage() {
   const [hasResume,    setHasResume]    = useState(false)
   const [resumeSkills, setResumeSkills] = useState<string[]>([])
   const [drawerOpen,   setDrawerOpen]   = useState(false)
+  const [generateJob,  setGenerateJob]  = useState<Job | null>(null)
+  const [generateMode, setGenerateMode] = useState<DocMode>('Resume')
 
   // Load resume skills once on mount
   useEffect(() => {
@@ -713,8 +695,9 @@ export default function JobSearchPage() {
     setJobs(prev => prev.map(j => j.id === job.id ? { ...j, saved: !j.saved } : j))
   }
 
-  function handleGenerate(job: Job) {
-    navigate('/builder')
+  function handleGenerate(job: Job, mode: DocMode) {
+    setGenerateJob(job)
+    setGenerateMode(mode)
   }
 
   return (
@@ -792,7 +775,7 @@ export default function JobSearchPage() {
                   job={job}
                   hasResume={hasResume}
                   onSave={() => toggleSave(job)}
-                  onGenerate={() => handleGenerate(job)}
+                  onGenerate={(mode) => handleGenerate(job, mode)}
                 />
               ))}
             </div>
@@ -828,6 +811,14 @@ export default function JobSearchPage() {
 
       <MobileBottomNav />
       <FloatingActionButton onClick={() => navigate('/builder')} />
+
+      {generateJob && (
+        <GenerateModal
+          job={generateJob}
+          mode={generateMode}
+          onClose={() => setGenerateJob(null)}
+        />
+      )}
     </div>
   )
 }

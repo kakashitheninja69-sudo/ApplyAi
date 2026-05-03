@@ -3,6 +3,7 @@ import express    from 'express'
 import cors       from 'cors'
 import rateLimit  from 'express-rate-limit'
 import { router as jobsRouter } from './routes/jobs'
+import { aiRouter }             from './routes/ai'
 import { cacheStats }           from './cache/jobCache'
 
 const app  = express()
@@ -11,7 +12,7 @@ const PORT = parseInt(process.env.PORT ?? '3001', 10)
 // ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin:  process.env.CORS_ORIGIN ?? '*',
-  methods: ['GET'],
+  methods: ['GET', 'POST'],
 }))
 
 app.use(express.json())
@@ -27,6 +28,7 @@ app.use(rateLimit({
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/jobs', jobsRouter)
+app.use('/ai',   aiRouter)
 
 app.get('/health', (_req, res) => {
   res.json({

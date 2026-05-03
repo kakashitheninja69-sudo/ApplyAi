@@ -6,6 +6,7 @@ import { signOut } from '@/lib/firebase'
 import { relativeTime, stripHtml } from '@/lib/jobApi'
 import type { ApiJob } from '@/lib/jobApi'
 import { getSavedJobs, unsaveJob } from '@/lib/savedJobs'
+import AppDrawer from '@/components/layout/AppDrawer'
 
 const LOGO_COLORS = [
   '#4285f4','#635bff','#ff5a5f','#0082fb','#e50914',
@@ -13,27 +14,25 @@ const LOGO_COLORS = [
   '#2ecc71','#e67e22','#e91e8c','#34495e','#16a085',
 ]
 
-function SavedTopNav() {
+function SavedTopNav({ onMenuToggle }: { onMenuToggle: () => void }) {
   const navigate = useNavigate()
   const { currentUser } = useAuth()
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-6 gap-4">
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-        </button>
-        <button onClick={() => navigate('/')} className="text-[18px] font-bold text-primary tracking-tight font-h1">
-          ApplyAI
-        </button>
-      </div>
+    <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-4 sm:px-6 gap-3">
+      <button
+        onClick={onMenuToggle}
+        className="w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors shrink-0"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>menu</span>
+      </button>
+      <button onClick={() => navigate('/')} className="text-[18px] font-bold text-primary tracking-tight font-h1">
+        ApplyAI
+      </button>
       <nav className="hidden md:flex items-center gap-1 ml-4">
         {[
-          { label: 'Find Jobs', path: '/jobs', active: false },
-          { label: 'Saved Jobs', path: '/saved-jobs', active: true },
-          { label: 'Resumes', path: '/dashboard', active: false },
+          { label: 'Find Jobs',  path: '/jobs',       active: false },
+          { label: 'Saved Jobs', path: '/saved-jobs', active: true  },
+          { label: 'Resumes',    path: '/dashboard',  active: false },
         ].map(({ label, path, active }) => (
           <button
             key={label}
@@ -69,47 +68,11 @@ function SavedTopNav() {
   )
 }
 
-function SavedSidebar() {
-  const navigate = useNavigate()
-  const navItems = [
-    { icon: 'dashboard',    label: 'Dashboard',  path: '/dashboard', active: false },
-    { icon: 'work_history', label: 'Job Search', path: '/jobs',      active: false },
-    { icon: 'bookmark',     label: 'Saved Jobs', path: '/saved-jobs', active: true },
-    { icon: 'description',  label: 'My Resumes', path: '/dashboard', active: false },
-  ]
-  return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-16 bottom-0 w-60 bg-white border-r border-outline-variant z-30 py-6">
-      <nav className="flex-1 px-3 space-y-0.5">
-        {navItems.map(item => (
-          <button
-            key={item.label}
-            onClick={() => item.path && navigate(item.path)}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-body-sm font-medium transition-all duration-150',
-              item.active
-                ? 'bg-primary/10 text-primary border-r-2 border-primary'
-                : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-            )}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: '20px', fontVariationSettings: item.active ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              {item.icon}
-            </span>
-            {item.label}
-          </button>
-        ))}
-      </nav>
-    </aside>
-  )
-}
-
 function SavedJobCard({ job, onUnsave }: { job: ApiJob; onUnsave: () => void }) {
-  const initial   = job.company[0]?.toUpperCase() ?? '?'
-  const colorIdx  = Math.abs(job.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % LOGO_COLORS.length
-  const logoColor = LOGO_COLORS[colorIdx]
-  const canOpen   = job.applyUrl && job.applyUrl !== '#'
+  const initial    = job.company[0]?.toUpperCase() ?? '?'
+  const colorIdx   = Math.abs(job.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % LOGO_COLORS.length
+  const logoColor  = LOGO_COLORS[colorIdx]
+  const canOpen    = job.applyUrl && job.applyUrl !== '#'
 
   return (
     <div className="bg-white rounded-2xl border border-outline-variant p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
@@ -194,7 +157,8 @@ function SavedJobCard({ job, onUnsave }: { job: ApiJob; onUnsave: () => void }) 
 
 export default function SavedJobsPage() {
   const navigate = useNavigate()
-  const [jobs, setJobs] = useState<ApiJob[]>([])
+  const [jobs,       setJobs]       = useState<ApiJob[]>([])
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     setJobs(getSavedJobs())
@@ -207,9 +171,10 @@ export default function SavedJobsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SavedTopNav />
-      <SavedSidebar />
-      <main className="pt-16 lg:pl-60 pb-20 lg:pb-8">
+      <SavedTopNav onMenuToggle={() => setDrawerOpen(true)} />
+      <AppDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      <main className="pt-16 pb-20 lg:pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
           <div className="mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-fixed rounded-full mb-3">
@@ -249,6 +214,25 @@ export default function SavedJobsPage() {
           )}
         </div>
       </main>
+
+      {/* Mobile bottom nav */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant z-40 flex">
+        {[
+          { icon: 'search',   label: 'Search',  path: '/jobs'       },
+          { icon: 'bookmark', label: 'Saved',   path: '/saved-jobs', active: true },
+          { icon: 'fact_check', label: 'Tracker', path: '/tracker'  },
+          { icon: 'person',   label: 'Profile', path: '/dashboard'  },
+        ].map(item => (
+          <button
+            key={item.label}
+            onClick={() => navigate(item.path)}
+            className={cn('flex-1 flex flex-col items-center justify-center py-3 gap-0.5', item.active ? 'text-primary' : 'text-on-surface-variant')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '22px', fontVariationSettings: item.active ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
+            <span className="text-[10px] font-semibold">{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   )
 }

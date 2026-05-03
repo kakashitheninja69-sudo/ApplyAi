@@ -7,6 +7,7 @@ import { searchJobs, relativeTime, stripHtml } from '@/lib/jobApi'
 import type { ApiJob } from '@/lib/jobApi'
 import { loadAllResumes, loadResume } from '@/lib/localResumes'
 import { getSavedJobs, saveJob, unsaveJob, isJobSaved } from '@/lib/savedJobs'
+import AppDrawer from '@/components/layout/AppDrawer'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ const TIME_POSTED = ['Any time', 'Past 24h', 'Past week', 'Past month']
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function JobTopNav() {
+function JobTopNav({ onMenuToggle }: { onMenuToggle: () => void }) {
   const navigate    = useNavigate()
   const { currentUser } = useAuth()
   const [showNotif,    setShowNotif]    = useState(false)
@@ -111,15 +112,16 @@ function JobTopNav() {
   }, [])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-6 gap-4">
-      {/* Back + Logo */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-all"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-        </button>
+    <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-4 sm:px-6 gap-3">
+      {/* Hamburger */}
+      <button
+        onClick={onMenuToggle}
+        className="w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors shrink-0"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>menu</span>
+      </button>
+      {/* Logo */}
+      <div className="flex items-center shrink-0">
         <button onClick={() => navigate('/')} className="text-[18px] font-bold text-primary tracking-tight font-h1">
           ApplyAI
         </button>
@@ -278,69 +280,6 @@ function JobTopNav() {
   )
 }
 
-function JobSidebar() {
-  const navigate = useNavigate()
-  const savedCount = getSavedJobs().length
-
-  const navItems = [
-    { icon: 'dashboard',    label: 'Dashboard',  path: '/dashboard',  active: false },
-    { icon: 'work_history', label: 'Job Search', path: '/jobs',       active: true  },
-    { icon: 'bookmark',     label: 'Saved Jobs', path: '/saved-jobs', active: false, badge: savedCount > 0 ? savedCount : undefined },
-    { icon: 'description',  label: 'My Resumes', path: '/dashboard',  active: false },
-    { icon: 'fact_check',   label: 'Tracker',    path: null,          active: false },
-    { icon: 'mail',         label: 'Messages',   path: null,          active: false },
-  ]
-
-  return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-16 bottom-0 w-60 bg-white border-r border-outline-variant z-30 py-6">
-      <nav className="flex-1 px-3 space-y-0.5">
-        {navItems.map(item => (
-          <button
-            key={item.label}
-            onClick={() => item.path && navigate(item.path)}
-            className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-body-sm font-medium transition-all duration-150 group',
-              item.active
-                ? 'bg-primary/10 text-primary border-r-2 border-primary'
-                : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:translate-x-0.5'
-            )}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: '20px', fontVariationSettings: item.active ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              {item.icon}
-            </span>
-            <span className="flex-1 text-left">{item.label}</span>
-            {'badge' in item && item.badge !== undefined && (
-              <span className="text-[10px] font-bold text-white bg-primary px-1.5 py-0.5 rounded-full">{item.badge}</span>
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Boost card */}
-      <div className="mx-3 p-4 rounded-2xl bg-surface-container-low border border-outline-variant">
-        <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center mb-3">
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-            rocket_launch
-          </span>
-        </div>
-        <p className="font-body-sm font-bold text-on-background text-[13px] mb-1">Boost Visibility</p>
-        <p className="text-[11px] text-on-surface-variant mb-3 leading-relaxed">
-          Tailor your resume for each role and land more interviews.
-        </p>
-        <button
-          onClick={() => navigate('/builder')}
-          className="w-full py-2 rounded-lg text-[12px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.97]"
-          style={{ background: 'linear-gradient(135deg, #003fb1 0%, #1a56db 100%)' }}
-        >
-          Personalise Resume
-        </button>
-      </div>
-    </aside>
-  )
-}
 
 interface SearchPanelProps {
   keyword: string; location: string; jobType: string; distance: string; timePosted: string
@@ -681,6 +620,7 @@ export default function JobSearchPage() {
   const [searched,     setSearched]     = useState(false)
   const [hasResume,    setHasResume]    = useState(false)
   const [resumeSkills, setResumeSkills] = useState<string[]>([])
+  const [drawerOpen,   setDrawerOpen]   = useState(false)
 
   // Load resume skills once on mount
   useEffect(() => {
@@ -779,10 +719,10 @@ export default function JobSearchPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <JobTopNav />
-      <JobSidebar />
+      <JobTopNav onMenuToggle={() => setDrawerOpen(true)} />
+      <AppDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <main className="pt-16 lg:pl-60 pb-20 lg:pb-8">
+      <main className="pt-16 pb-20 lg:pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
           <div className="mb-6">

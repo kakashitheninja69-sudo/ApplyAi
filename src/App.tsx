@@ -12,6 +12,8 @@ import OnboardingPage  from './pages/OnboardingPage'
 import DashboardPage   from './pages/DashboardPage'
 import JobSearchPage  from './pages/JobSearchPage'
 import SavedJobsPage  from './pages/SavedJobsPage'
+import TrackerPage    from './pages/TrackerPage'
+import MessagesPage   from './pages/MessagesPage'
 import AuthModal     from './components/auth/AuthModal'
 import UpgradeModal  from './components/ui/UpgradeModal'
 import TopNav        from './components/layout/TopNav'
@@ -40,6 +42,8 @@ function AnimatedRoutes() {
         <Route path="/api"       element={<ApiPage />} />
         <Route path="/jobs"        element={<JobSearchPage />} />
         <Route path="/saved-jobs"  element={<SavedJobsPage />} />
+        <Route path="/tracker"     element={<TrackerPage />}   />
+        <Route path="/messages"    element={<MessagesPage />}  />
       </Routes>
     </div>
   )
@@ -49,7 +53,7 @@ function AnimatedRoutes() {
 // div never breaks the nav's `position: fixed` containing block.
 function AppShell() {
   const location = useLocation()
-  const isBuilder = ['/builder', '/onboarding', '/dashboard', '/jobs', '/saved-jobs'].includes(location.pathname)
+  const isBuilder = ['/builder', '/onboarding', '/dashboard', '/jobs', '/saved-jobs', '/tracker', '/messages'].includes(location.pathname)
   return (
     <>
       <ScrollToTop />

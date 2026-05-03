@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/lib/firebase'
 import { searchJobs, relativeTime, stripHtml } from '@/lib/jobApi'
 import type { ApiJob } from '@/lib/jobApi'
+import { loadAllResumes, loadResume } from '@/lib/localResumes'
+import { getSavedJobs, saveJob, unsaveJob, isJobSaved } from '@/lib/savedJobs'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-// Re-use ApiJob from jobApi; extend with UI-only fields
 
 type Job = ApiJob & {
   initial:    string
@@ -23,15 +24,24 @@ const LOGO_COLORS = [
   '#2ecc71','#e67e22','#e91e8c','#34495e','#16a085',
 ]
 
-function toUiJob(api: ApiJob, index: number): Job {
+function calcMatchScore(job: { title: string; tags: string[] }, resumeSkills: string[]): number {
+  if (!resumeSkills.length) return 0
+  const jobWords = [job.title, ...job.tags]
+    .join(' ').toLowerCase().split(/\s+/).filter(w => w.length > 2)
+  if (!jobWords.length) return 65
+  const hits = jobWords.filter(w => resumeSkills.some(s => s.includes(w) || w.includes(s))).length
+  return Math.min(99, Math.max(55, Math.round(55 + (hits / jobWords.length) * 40)))
+}
+
+function toUiJob(api: ApiJob, index: number, resumeSkills: string[] = []): Job {
   return {
     ...api,
     description: stripHtml(api.description).slice(0, 220),
-    initial:    api.company[0]?.toUpperCase() ?? '?',
-    logoColor:  LOGO_COLORS[index % LOGO_COLORS.length],
-    matchScore: 65 + (parseInt(api.id.replace(/\D/g, '').slice(-3) || '0', 10) % 30),
-    posted:     relativeTime(api.postedAt),
-    saved:      false,
+    initial:     api.company[0]?.toUpperCase() ?? '?',
+    logoColor:   LOGO_COLORS[index % LOGO_COLORS.length],
+    matchScore:  calcMatchScore(api, resumeSkills),
+    posted:      relativeTime(api.postedAt),
+    saved:       isJobSaved(api.id),
   }
 }
 
@@ -43,7 +53,7 @@ const ALL_JOBS: Job[] = [
     initial: 'G', logoColor: '#4285f4', location: 'Mountain View, CA', country: 'US',
     remote: true, type: 'full-time', salary: '$180k – $240k', salaryMin: 180000, salaryMax: 240000,
     posted: '2d ago', postedAt: new Date(Date.now() - 2*86400000).toISOString(),
-    matchScore: 92, saved: false, source: 'other', applyUrl: '#',
+    matchScore: 0, saved: false, source: 'other', applyUrl: '#',
     description: 'Join our infrastructure team to build highly scalable distributed systems that power Google services worldwide.',
     tags: ['Go', 'Kubernetes', 'gRPC'],
   },
@@ -52,7 +62,7 @@ const ALL_JOBS: Job[] = [
     initial: 'S', logoColor: '#635bff', location: 'San Francisco, CA', country: 'US',
     remote: false, type: 'full-time', salary: '$160k – $210k', salaryMin: 160000, salaryMax: 210000,
     posted: '1d ago', postedAt: new Date(Date.now() - 86400000).toISOString(),
-    matchScore: 87, saved: false, source: 'other', applyUrl: '#',
+    matchScore: 0, saved: false, source: 'other', applyUrl: '#',
     description: 'Lead growth initiatives for Stripe\'s core payments product across enterprise and SMB segments.',
     tags: ['Product Strategy', 'SQL', 'A/B Testing'],
   },
@@ -61,7 +71,7 @@ const ALL_JOBS: Job[] = [
     initial: 'F', logoColor: '#f24e1e', location: 'Remote', country: 'US',
     remote: true, type: 'full-time', salary: '$130k – $175k', salaryMin: 130000, salaryMax: 175000,
     posted: '2d ago', postedAt: new Date(Date.now() - 2*86400000).toISOString(),
-    matchScore: 90, saved: false, source: 'other', applyUrl: '#',
+    matchScore: 0, saved: false, source: 'other', applyUrl: '#',
     description: 'Work on the design tool used by over 4 million designers. Ship features that make creativity faster.',
     tags: ['React', 'TypeScript', 'WebGL'],
   },
@@ -70,7 +80,7 @@ const ALL_JOBS: Job[] = [
     initial: 'S', logoColor: '#96bf48', location: 'Toronto, Canada', country: 'CA',
     remote: true, type: 'contract', salary: '$110k – $150k', salaryMin: 110000, salaryMax: 150000,
     posted: '4d ago', postedAt: new Date(Date.now() - 4*86400000).toISOString(),
-    matchScore: 74, saved: false, source: 'other', applyUrl: '#',
+    matchScore: 0, saved: false, source: 'other', applyUrl: '#',
     description: 'Support Shopify\'s global commerce infrastructure serving millions of merchants worldwide.',
     tags: ['Terraform', 'AWS', 'Docker'],
   },
@@ -83,8 +93,22 @@ const TIME_POSTED = ['Any time', 'Past 24h', 'Past week', 'Past month']
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function JobTopNav() {
-  const navigate = useNavigate()
+  const navigate    = useNavigate()
   const { currentUser } = useAuth()
+  const [showNotif,    setShowNotif]    = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const notifRef    = useRef<HTMLDivElement>(null)
+  const settingsRef = useRef<HTMLDivElement>(null)
+  const recentSaved = getSavedJobs().slice(0, 4)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotif(false)
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setShowSettings(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-6 gap-4">
@@ -104,19 +128,17 @@ function JobTopNav() {
       {/* Nav links */}
       <nav className="hidden md:flex items-center gap-1 ml-4">
         {[
-          { label: 'Find Jobs', active: true },
-          { label: 'Applications', active: false },
-          { label: 'Resumes', active: false },
-          { label: 'Interviews', active: false },
-        ].map(({ label, active }) => (
+          { label: 'Find Jobs',   path: '/jobs',       active: true  },
+          { label: 'Saved Jobs',  path: '/saved-jobs', active: false },
+          { label: 'Resumes',     path: '/dashboard',  active: false },
+          { label: 'Interviews',  path: null,          active: false },
+        ].map(({ label, path, active }) => (
           <button
             key={label}
-            onClick={() => label === 'Resumes' ? navigate('/dashboard') : undefined}
+            onClick={() => path && navigate(path)}
             className={cn(
               'relative px-3 py-1.5 rounded-lg font-body-sm font-medium transition-all duration-200',
-              active
-                ? 'text-primary bg-primary/8'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+              active ? 'text-primary bg-primary/8' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
             )}
           >
             {label}
@@ -127,24 +149,118 @@ function JobTopNav() {
 
       {/* Right actions */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Search pill */}
-        <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container border border-outline-variant w-56">
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '16px' }}>search</span>
-          <span className="font-body-sm text-on-surface-variant text-[13px]">Search jobs…</span>
+        {/* Notifications */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => { setShowNotif(v => !v); setShowSettings(false) }}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container transition-colors relative"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>notifications</span>
+            {recentSaved.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
+            )}
+          </button>
+          {showNotif && (
+            <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl border border-outline-variant shadow-xl z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-outline-variant flex items-center justify-between">
+                <span className="font-body-sm font-bold text-[14px] text-on-background">Notifications</span>
+                {recentSaved.length > 0 && (
+                  <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    {recentSaved.length} saved
+                  </span>
+                )}
+              </div>
+              {recentSaved.length > 0 ? (
+                <>
+                  <div className="divide-y divide-outline-variant">
+                    {recentSaved.map(job => (
+                      <div key={job.id} className="px-4 py-3 flex items-start gap-3 hover:bg-surface-container transition-colors">
+                        <div
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-[13px] shrink-0"
+                          style={{ background: LOGO_COLORS[Math.abs(job.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % LOGO_COLORS.length] }}
+                        >
+                          {job.company[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body-sm text-[13px] font-semibold text-on-background truncate">{job.title}</p>
+                          <p className="text-[11px] text-on-surface-variant">{job.company} · {relativeTime(job.postedAt)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-3 border-t border-outline-variant">
+                    <button
+                      onClick={() => { navigate('/saved-jobs'); setShowNotif(false) }}
+                      className="w-full text-[12px] font-bold text-primary hover:text-primary/80 transition-colors text-center"
+                    >
+                      View all saved jobs →
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="px-4 py-8 text-center">
+                  <span className="material-symbols-outlined text-on-surface-variant mb-2 block" style={{ fontSize: '32px' }}>notifications_none</span>
+                  <p className="text-[13px] font-semibold text-on-background mb-1">No notifications yet</p>
+                  <p className="text-[11px] text-on-surface-variant">Save jobs to track them here</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <button className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container transition-colors relative">
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>notifications</span>
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
-        </button>
-
-        <button className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container transition-colors">
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>settings</span>
-        </button>
+        {/* Settings */}
+        <div className="relative" ref={settingsRef}>
+          <button
+            onClick={() => { setShowSettings(v => !v); setShowNotif(false) }}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>settings</span>
+          </button>
+          {showSettings && (
+            <div className="absolute right-0 top-12 w-64 bg-white rounded-2xl border border-outline-variant shadow-xl z-50 overflow-hidden">
+              {currentUser && (
+                <div className="px-4 py-3 border-b border-outline-variant">
+                  <p className="font-body-sm font-bold text-[13px] text-on-background truncate">
+                    {currentUser.displayName || 'Account'}
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant truncate">{currentUser.email}</p>
+                </div>
+              )}
+              <div className="py-1.5">
+                {[
+                  { icon: 'dashboard',   label: 'Dashboard',    path: '/dashboard'  },
+                  { icon: 'description', label: 'My Resumes',   path: '/dashboard'  },
+                  { icon: 'bookmark',    label: 'Saved Jobs',   path: '/saved-jobs' },
+                  { icon: 'work_history',label: 'Job Search',   path: '/jobs'       },
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => { navigate(item.path); setShowSettings(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '18px' }}>{item.icon}</span>
+                    <span className="font-body-sm text-[13px] text-on-surface">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              {currentUser && (
+                <div className="border-t border-outline-variant py-1.5">
+                  <button
+                    onClick={() => { signOut(); setShowSettings(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-error/5 transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-error" style={{ fontSize: '18px' }}>logout</span>
+                    <span className="font-body-sm text-[13px] text-error">Sign out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {currentUser ? (
           <button
-            onClick={() => signOut()}
+            onClick={() => navigate('/dashboard')}
             className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-[13px] hover:opacity-90 transition-opacity"
           >
             {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
@@ -164,13 +280,15 @@ function JobTopNav() {
 
 function JobSidebar() {
   const navigate = useNavigate()
+  const savedCount = getSavedJobs().length
 
   const navItems = [
-    { icon: 'dashboard',   label: 'Dashboard',   path: '/dashboard' },
-    { icon: 'work_history', label: 'Job Search',  path: '/jobs', active: true },
-    { icon: 'description', label: 'My Resumes',   path: '/dashboard' },
-    { icon: 'fact_check',  label: 'Tracker',      path: null },
-    { icon: 'mail',        label: 'Messages',     path: null },
+    { icon: 'dashboard',    label: 'Dashboard',  path: '/dashboard',  active: false },
+    { icon: 'work_history', label: 'Job Search', path: '/jobs',       active: true  },
+    { icon: 'bookmark',     label: 'Saved Jobs', path: '/saved-jobs', active: false, badge: savedCount > 0 ? savedCount : undefined },
+    { icon: 'description',  label: 'My Resumes', path: '/dashboard',  active: false },
+    { icon: 'fact_check',   label: 'Tracker',    path: null,          active: false },
+    { icon: 'mail',         label: 'Messages',   path: null,          active: false },
   ]
 
   return (
@@ -193,7 +311,10 @@ function JobSidebar() {
             >
               {item.icon}
             </span>
-            {item.label}
+            <span className="flex-1 text-left">{item.label}</span>
+            {'badge' in item && item.badge !== undefined && (
+              <span className="text-[10px] font-bold text-white bg-primary px-1.5 py-0.5 rounded-full">{item.badge}</span>
+            )}
           </button>
         ))}
       </nav>
@@ -222,19 +343,10 @@ function JobSidebar() {
 }
 
 interface SearchPanelProps {
-  keyword: string
-  location: string
-  jobType: string
-  distance: string
-  timePosted: string
-  onKeyword: (v: string) => void
-  onLocation: (v: string) => void
-  onJobType: (v: string) => void
-  onDistance: (v: string) => void
-  onTimePosted: (v: string) => void
-  onSearch: () => void
-  locating: boolean
-  onGeolocate: () => void
+  keyword: string; location: string; jobType: string; distance: string; timePosted: string
+  onKeyword: (v: string) => void; onLocation: (v: string) => void; onJobType: (v: string) => void
+  onDistance: (v: string) => void; onTimePosted: (v: string) => void
+  onSearch: () => void; locating: boolean; onGeolocate: () => void
 }
 
 function SearchPanel({
@@ -244,9 +356,7 @@ function SearchPanel({
 }: SearchPanelProps) {
   return (
     <div className="bg-white rounded-3xl border border-outline-variant shadow-sm p-6 mb-6">
-      {/* Inputs row */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        {/* Job title */}
         <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl border border-outline-variant bg-surface-container-low focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
           <span className="material-symbols-outlined text-primary shrink-0" style={{ fontSize: '20px' }}>work</span>
           <input
@@ -257,8 +367,6 @@ function SearchPanel({
             className="flex-1 bg-transparent outline-none font-body-sm text-on-background placeholder:text-on-surface-variant text-[14px]"
           />
         </div>
-
-        {/* Location */}
         <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl border border-outline-variant bg-surface-container-low focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
           <span className="material-symbols-outlined text-primary shrink-0" style={{ fontSize: '20px' }}>location_on</span>
           <input
@@ -281,8 +389,6 @@ function SearchPanel({
             </span>
           </button>
         </div>
-
-        {/* Search button */}
         <button
           onClick={onSearch}
           className="flex items-center gap-2 px-7 py-3 rounded-2xl font-body-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.97] shrink-0"
@@ -292,14 +398,10 @@ function SearchPanel({
           Search Jobs
         </button>
       </div>
-
-      {/* Filter pills */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-widest text-[10px]">Filters:</span>
-
-        <FilterSelect label="Distance" options={DISTANCES} value={distance} onChange={onDistance} />
+        <FilterSelect label="Distance" options={DISTANCES}   value={distance}   onChange={onDistance}   />
         <FilterSelect label="Posted"   options={TIME_POSTED} value={timePosted} onChange={onTimePosted} />
-
         <div className="flex gap-1.5 flex-wrap">
           {JOB_TYPES.map(t => (
             <button
@@ -340,19 +442,45 @@ function FilterSelect({ label, options, value, onChange }: {
   )
 }
 
-function AiPersonalizationCard({ job, onGenerate }: { job: Job; onGenerate: () => void }) {
+function AiPersonalizationCard({ job, hasResume, onGenerate }: {
+  job: Job; hasResume: boolean; onGenerate: () => void
+}) {
+  const navigate = useNavigate()
   const [doc, setDoc] = useState('Resume')
+
+  if (!hasResume) {
+    return (
+      <div
+        className="mt-4 rounded-2xl p-4 flex items-center gap-3 flex-wrap"
+        style={{ background: 'linear-gradient(135deg, #eef4ff 0%, #e8eeff 100%)', border: '1px solid #c7d7f7' }}
+      >
+        <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>description</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-body-sm font-bold text-primary text-[13px]">Add a resume to see your match score</p>
+          <p className="text-[11px] text-on-surface-variant mt-0.5">Create your resume to personalise documents for this job</p>
+        </div>
+        <button
+          onClick={() => navigate('/builder')}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.96] shrink-0"
+          style={{ background: 'linear-gradient(135deg, #003fb1 0%, #1a56db 100%)', boxShadow: '0 3px 10px rgba(0,63,177,0.25)' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
+          Build Resume
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
       className="mt-4 rounded-2xl p-4 flex items-center gap-3 flex-wrap"
       style={{ background: 'linear-gradient(135deg, #eef4ff 0%, #e8eeff 100%)', border: '1px solid #c7d7f7' }}
     >
-      {/* Left */}
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
-            auto_awesome
-          </span>
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
         </div>
         <div className="min-w-0">
           <p className="font-body-sm font-bold text-primary text-[13px]">Personalise documents for this job</p>
@@ -364,8 +492,6 @@ function AiPersonalizationCard({ job, onGenerate }: { job: Job; onGenerate: () =
           </div>
         </div>
       </div>
-
-      {/* Right */}
       <div className="flex items-center gap-2 shrink-0">
         <select
           value={doc}
@@ -387,8 +513,8 @@ function AiPersonalizationCard({ job, onGenerate }: { job: Job; onGenerate: () =
   )
 }
 
-function JobCard({ job, onSave, onGenerate }: {
-  job: Job; onSave: () => void; onGenerate: () => void
+function JobCard({ job, hasResume, onSave, onGenerate }: {
+  job: Job; hasResume: boolean; onSave: () => void; onGenerate: () => void
 }) {
   const canOpen = job.applyUrl && job.applyUrl !== '#'
   function openJob() {
@@ -398,7 +524,6 @@ function JobCard({ job, onSave, onGenerate }: {
   return (
     <div className="bg-white rounded-2xl border border-outline-variant p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group">
       <div className="flex items-start gap-4">
-        {/* Company logo */}
         <div
           onClick={openJob}
           className={cn('w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm', canOpen && 'cursor-pointer')}
@@ -406,8 +531,6 @@ function JobCard({ job, onSave, onGenerate }: {
         >
           {job.initial}
         </div>
-
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -432,8 +555,6 @@ function JobCard({ job, onSave, onGenerate }: {
                 )}
               </div>
             </div>
-
-            {/* Bookmark */}
             <button
               onClick={onSave}
               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-primary/8 transition-colors shrink-0"
@@ -451,22 +572,17 @@ function JobCard({ job, onSave, onGenerate }: {
             </button>
           </div>
 
-          {/* Description */}
           <p className="font-body-sm text-[13px] text-on-surface-variant mt-2 leading-relaxed line-clamp-2">
             {job.description}
           </p>
 
-          {/* Tags row */}
           <div className="flex items-center gap-2 mt-3 flex-wrap">
-            {/* Job type */}
             <span
               className="text-[11px] font-bold px-2.5 py-1 rounded-full"
               style={{ background: '#dbe1ff', color: '#003fb1' }}
             >
               {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
             </span>
-
-            {/* Salary */}
             {job.salary && (
               <span
                 className="text-[11px] font-bold px-2.5 py-1 rounded-full"
@@ -475,8 +591,6 @@ function JobCard({ job, onSave, onGenerate }: {
                 {job.salary}
               </span>
             )}
-
-            {/* Skills */}
             {(job.tags ?? []).slice(0, 3).map(tag => (
               <span
                 key={tag}
@@ -485,8 +599,6 @@ function JobCard({ job, onSave, onGenerate }: {
                 {tag}
               </span>
             ))}
-
-            {/* Posted + Apply */}
             <div className="ml-auto flex items-center gap-2">
               <span className="text-[11px] text-on-surface-variant">{job.posted}</span>
               {canOpen && (
@@ -503,9 +615,7 @@ function JobCard({ job, onSave, onGenerate }: {
           </div>
         </div>
       </div>
-
-      {/* AI Personalisation card */}
-      <AiPersonalizationCard job={job} onGenerate={onGenerate} />
+      <AiPersonalizationCard job={job} hasResume={hasResume} onGenerate={onGenerate} />
     </div>
   )
 }
@@ -526,10 +636,10 @@ function FloatingActionButton({ onClick }: { onClick: () => void }) {
 function MobileBottomNav() {
   const navigate = useNavigate()
   const items = [
-    { icon: 'search',      label: 'Search',   path: '/jobs',      active: true },
-    { icon: 'fact_check',  label: 'Applied',  path: '/dashboard', active: false },
-    { icon: 'description', label: 'Builder',  path: '/builder',   active: false },
-    { icon: 'person',      label: 'Profile',  path: '/dashboard', active: false },
+    { icon: 'search',      label: 'Search',   path: '/jobs',       active: true  },
+    { icon: 'bookmark',    label: 'Saved',    path: '/saved-jobs', active: false },
+    { icon: 'description', label: 'Builder',  path: '/builder',    active: false },
+    { icon: 'person',      label: 'Profile',  path: '/dashboard',  active: false },
   ]
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant z-40 flex">
@@ -560,30 +670,50 @@ function MobileBottomNav() {
 export default function JobSearchPage() {
   const navigate = useNavigate()
 
-  const [keyword,    setKeyword]    = useState('')
-  const [location,   setLocation]   = useState('')
-  const [jobType,    setJobType]    = useState('All Types')
-  const [distance,   setDistance]   = useState('Any distance')
-  const [timePosted, setTimePosted] = useState('Any time')
-  const [locating,   setLocating]   = useState(false)
-  const [jobs,       setJobs]       = useState<Job[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [searched,   setSearched]   = useState(false)
+  const [keyword,      setKeyword]      = useState('')
+  const [location,     setLocation]     = useState('')
+  const [jobType,      setJobType]      = useState('All Types')
+  const [distance,     setDistance]     = useState('Any distance')
+  const [timePosted,   setTimePosted]   = useState('Any time')
+  const [locating,     setLocating]     = useState(false)
+  const [jobs,         setJobs]         = useState<Job[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [searched,     setSearched]     = useState(false)
+  const [hasResume,    setHasResume]    = useState(false)
+  const [resumeSkills, setResumeSkills] = useState<string[]>([])
 
-  // Initial load
+  // Load resume skills once on mount
+  useEffect(() => {
+    const resumes = loadAllResumes()
+    if (resumes.length > 0) {
+      setHasResume(true)
+      const data = loadResume(resumes[0].id)
+      if (data) {
+        const skills = [
+          ...(data.skills ?? []).map(s => s.name.toLowerCase()),
+          data.contact?.title?.toLowerCase() ?? '',
+          ...(data.work ?? []).map(w => w.role.toLowerCase()),
+          ...(data.summary ?? '').toLowerCase().split(/\s+/).filter(w => w.length > 3),
+        ].filter(Boolean)
+        setResumeSkills(skills)
+      }
+    }
+  }, [])
+
+  // Initial job load
   useEffect(() => {
     searchJobs({ limit: 25 })
-      .then(r => setJobs(r.jobs.map(toUiJob)))
+      .then(r => setJobs(r.jobs.map((j, i) => toUiJob(j, i, resumeSkills))))
       .catch(() => setJobs(ALL_JOBS))
       .finally(() => setLoading(false))
-  }, [])
+  }, [resumeSkills])
 
   async function handleSearch() {
     setSearched(true)
     setLoading(true)
     setJobs([])
     try {
-      const typeParam = jobType === 'All Types' ? undefined
+      const typeParam = jobType === 'All Types'  ? undefined
         : jobType === 'Remote'     ? undefined
         : jobType === 'Full-time'  ? 'full-time'
         : jobType === 'Part-time'  ? 'part-time'
@@ -592,13 +722,13 @@ export default function JobSearchPage() {
         : undefined
 
       const res = await searchJobs({
-        q:        keyword,
+        q:      keyword,
         location,
-        remote:   jobType === 'Remote' || undefined,
-        type:     typeParam,
-        limit:    30,
+        remote: jobType === 'Remote' || undefined,
+        type:   typeParam,
+        limit:  30,
       })
-      setJobs(res.jobs.map(toUiJob))
+      setJobs(res.jobs.map((j, i) => toUiJob(j, i, resumeSkills)))
     } catch {
       setJobs(ALL_JOBS)
     } finally {
@@ -617,7 +747,7 @@ export default function JobSearchPage() {
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           )
           const data = await res.json()
-          const city = data.address?.city || data.address?.town || data.address?.county || 'My Location'
+          const city  = data.address?.city || data.address?.town || data.address?.county || 'My Location'
           const state = data.address?.state_code || data.address?.state || ''
           setLocation(state ? `${city}, ${state}` : city)
         } catch {
@@ -631,8 +761,16 @@ export default function JobSearchPage() {
     )
   }
 
-  function toggleSave(id: string) {
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, saved: !j.saved } : j))
+  function toggleSave(job: Job) {
+    if (job.saved) {
+      unsaveJob(job.id)
+    } else {
+      // Save original ApiJob fields (strip UI-only fields)
+      const { initial, logoColor, matchScore, posted, saved, ...apiJob } = job
+      void initial; void logoColor; void matchScore; void posted; void saved
+      saveJob(apiJob)
+    }
+    setJobs(prev => prev.map(j => j.id === job.id ? { ...j, saved: !j.saved } : j))
   }
 
   function handleGenerate(job: Job) {
@@ -644,11 +782,9 @@ export default function JobSearchPage() {
       <JobTopNav />
       <JobSidebar />
 
-      {/* Main content — offset for sidebar and topnav */}
       <main className="pt-16 lg:pl-60 pb-20 lg:pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
-          {/* Page header */}
           <div className="mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-fixed rounded-full mb-3">
               <span className="material-symbols-outlined text-primary" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }}>work</span>
@@ -662,10 +798,9 @@ export default function JobSearchPage() {
             </p>
           </div>
 
-          {/* Search panel */}
           <SearchPanel
-            keyword={keyword}      location={location}
-            jobType={jobType}      distance={distance}
+            keyword={keyword}       location={location}
+            jobType={jobType}       distance={distance}
             timePosted={timePosted}
             onKeyword={setKeyword}  onLocation={setLocation}
             onJobType={setJobType}  onDistance={setDistance}
@@ -674,7 +809,6 @@ export default function JobSearchPage() {
             onGeolocate={handleGeolocate}
           />
 
-          {/* Results header */}
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-h2 text-[18px] font-bold text-on-background">
@@ -694,7 +828,6 @@ export default function JobSearchPage() {
             </div>
           </div>
 
-          {/* Job listings */}
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
@@ -717,7 +850,8 @@ export default function JobSearchPage() {
                 <JobCard
                   key={job.id}
                   job={job}
-                  onSave={() => toggleSave(job.id)}
+                  hasResume={hasResume}
+                  onSave={() => toggleSave(job)}
                   onGenerate={() => handleGenerate(job)}
                 />
               ))}
@@ -739,7 +873,7 @@ export default function JobSearchPage() {
                   setJobType('All Types')
                   setLoading(true)
                   searchJobs({ limit: 25 })
-                    .then(r => setJobs(r.jobs.map(toUiJob)))
+                    .then(r => setJobs(r.jobs.map((j, i) => toUiJob(j, i, resumeSkills))))
                     .catch(() => setJobs(ALL_JOBS))
                     .finally(() => setLoading(false))
                 }}
